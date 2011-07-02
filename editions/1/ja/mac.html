@@ -1,4 +1,4 @@
-<title>Installing on Mac OS X</title>
+<title>Mac OS Xへのインストール</title>
 
 <meta charset="utf-8">
 
@@ -10,65 +10,65 @@
 
 <script src="../../../script.js"></script>
 
-<h2 id="mac">Installing on Mac OS X</h2>
+<h2 id="mac">Mac OS Xへのインストール</h2>
 
 <h3 id="couchdbx">CouchDBX</h3>
 
-<p>The easiest way to get started with CouchDB on Mac OS X is by downloading <a href="http://janl.github.com/couchdbx/">CouchDBX</a>. This unofficial application doesn’t install anything to your system and can be run with a single double-click. Note, however, that for more serious use, it is recommended that you do a traditional installation with something like <a href="http://github.com/mxcl/homebrew/">Homebrew</a>.
+<p>Mac OS XでCouchDBを使い始める最も簡単な方法は、<a href="http://janl.github.com/couchdbx/">CouchDBX</a>をダウンロードすることです。この非公式なアプリケーションはあなたのシステムに何もインストールしません。ダブルクリックするだけで実行できます。しかしながら、注意点として、より重要な用途に用いるには<a href="http://github.com/mxcl/homebrew/">Homebrew</a>などを使って伝統的なインストールをすることをお勧めしておきます。
 
 <h3 id="homebrew">Homebrew</h3>
 
-<p>Homebrew is a recent addition to the software management tools on Mac OS X. Its premise is zero configuration, heavy optimizations, and a beer theme. Get Homebrew from <a href="http://github.com/mxcl/homebrew">http://github.com/mxcl/homebrew</a>. The installation instructions are minimal. Once you are set up, run:
+<p>Homebrewは最近追加されたMac OS Xのソフトウェア管理ツールです。これはゼロコンフィギュレーション、強力な最適化、そしてビールのテーマを約束するものです。Homebrewを<a href="http://github.com/mxcl/homebrew">http://github.com/mxcl/homebrew</a>から入手します。インストール手順はごくわずかです。セットアップができたら、次のコマンドを実行します。
 
 <pre>
 brew install couchdb
 </pre>
 
-<p>in the Terminal and wait until it is done. To start CouchDB, simply run:
+<p>上のコマンドをターミナルで実行し、完了するまで待ちます。CouchDBを起動するには、単に次のコマンドを実行します。
 
 <pre>
 couchdb
 </pre>
 
-<p>to see all the startup options available to you, run:
+<p>使用可能なすべての起動オプションを表示するには、次のコマンドを実行します。
 
 <pre>
 couchdb -h
 </pre>
 
-<p>This tells you how to run CouchDB in the background, among other useful hints.
+<p>これにより、CouchDBをバックグラウンドで実行する方法など、その他の便利なヒントを知ることができます。
 
-<p>To verify that CouchDB is indeed running, open your browser and visit <a href="http://127.0.0.1:5984/_utils/index.html">http://127.0.0.1:5984/_utils/index.html</a>.
+<p>CouchDBが実際に動作していることを確認するには、ブラウザを開き<a href="http://127.0.0.1:5984/_utils/index.html">http://127.0.0.1:5984/_utils/index.html</a>にアクセスします。
 
 <h3 id="macports">MacPorts</h3>
 
-<p>MacPorts is the de facto package management tool for Mac OS X. While not an official part of the operating system, it can be used to simplify the process of installing FLOSS software on your machine. Before you can install CouchDB with MacPorts, you need to download and install <a href="http://www.macports.org/install.php">MacPorts</a>.
+<p>MacPortsはMac OS Xのパッケージ管理ツールのデファクトです。オペレーティングシステムの公式な一部ではありませんが、これはFLOSSソフトウェアをあなたのマシンにインストールする手順を簡単にします。MacPortsでCouchDBをインストールする前に、<a href="http://www.macports.org/install.php">MacPorts</a>をダウンロードしてインストールする必要があります。
 
-<p>Make sure your MacPorts installation is up-to-date by running:
+<p>次の文を実行し、インストールしたMacPortsが最新のものであることを確認します。
 
 <pre>
 sudo port selfupdate
 </pre>
 
-<p>You can install CouchDB with MacPorts by running:
+<p>次のコマンドを実行し、MacPortsでCouchDBをインストールします。
 
 <pre>
 sudo port install couchdb
 </pre>
 
-<p>This command will install all of the necessary dependencies for CouchDB. If a dependency was already installed, MacPorts will not take care of upgrading the dependency to the newest version. To make sure that all of the dependencies are up-to-date, you should also run:
+<p>このコマンドはCouchDBに必要な依存するすべてのパッケージをインストールします。もし依存するパッケージがすでにインストールされていれば、MacPortsはその依存するパッケージを最新のバージョンにアップグレードしてくれたりはしません。依存するすべてのパッケージが最新のものであることを確実にするには、次のコマンドを実行する必要があります。
 
 <pre>
 sudo port upgrade couchdb
 </pre>
 
-<p>Mac OS X has a service management framework called <code>launchd</code> that can be used to start, stop, or manage system daemons. You can use this to start CouchDB automatically when the system boots up. If you want to add CouchDB to your <code>launchd</code> configuration, you should run:
+<p>Mac OS Xには<code>launchd</code>と呼ばれるサービス管理フレームワークがあり、これを使ってシステムデーモンを起動、停止、管理することができます。これを使って、システム起動時にCouchDBを自動的に起動することができます。もし、CouchDBを<code>launchd</code>の設定に追加したいと思うのであれば、次のコマンドを実行する必要があります。
 
 <pre>
 sudo launchctl load -w /opt/local/Library/LaunchDaemons/org.apache.couchdb.plist
 </pre>
 
-<p>After running this command, CouchDB should be available at:
+<p>このコマンドを実行した後、CouchDBは次のURLで利用できるようになっているはずです。
 
 <blockquote>
 
@@ -76,4 +76,4 @@ sudo launchctl load -w /opt/local/Library/LaunchDaemons/org.apache.couchdb.plist
 
 </blockquote>
 
-<p>CouchDB will also be started and stopped along with the operating system.
+<p>CouchDBはオペレーティングシステムと一緒に起動、停止します。

@@ -145,71 +145,53 @@ curl http://localhost:5984/config_db/_design/files/_list/apache/users?hostname=f
 
 <p>これは、ユーザーのビューを基に私たちのApacheの設定をレンダリングし、ファイルに保存します。信頼できる設定ジェネレーターをビルドする、なんて簡単な方法でしょう！
 
-<h3 id="theory">List Theory</h3>
+<h3 id="theory">リストの理論</h3>
 
-<p>Now that we’ve seen a complete list function, it’s worth mentioning some of the helpful properties they have.
+<p>完全なlist関数を見てきたので、それの持ついくつかの便利なプロパティーに言及することには価値があります。
 
+<p>最も明らかなものは、イテレーター形式のAPIです。各行は<code>getRow()</code>の呼び出しにより独立して読み込まれるので、メモリーリークが発生しないようにするのは簡単です。list関数のAPIを正しく使えば、任意の長さのリストをエラーなしにレンダリングすることができます。
 
-
-<p>The most obvious thing is the iterator-style API. Because each row is loaded independently by calling <code>getRow()</code>, it’s easy not to leak memory. The list function API is capable of rendering lists of arbitrary length without error, when used correctly.
-
-
-
-<p>On the other hand, this API gives you the flexibility to bundle a few rows in a single chunk of output, so if you had a view of, say, user accounts, followed by subdomains owned by that account, you could use a slightly more complex loop to build up some state in the list function for rendering more complex chunks. Let’s look at an alternate loop section:
-
-
+<p>一方、このAPIを使うと、いくつかの行をひとつの出力のチャンクにまとめるための柔軟性を得られますが、例えば、ユーザーのアカウントが所有するサブドメインの後にそのユーザーアカウントがあるような場合、より複雑なチャンクをレンダリングするためにlist関数中でいくつかの文からなる少し複雑なループを使うこともあります。代わりのループセクションを見てみましょう。
 
 <pre>
 var subdomainOwnerRow, subdomainRows = [];
 while (row = getRow()) {
 </pre>
 
-<p>We’ve entered a loop that will continue until we have reached the <code>endkey</code> of the view. The view is structured so that a user profile row is emitted, followed by all of that user’s subdomains. We’ll use the profile data and the subdomain information to template the configuration for each individual user. This means we can’t render any subdomain configuration until we know we’ve received all the rows for the current user.
-
-
+<p>ビューの<code>endkey</code>に到達するまで続くループに入ります。このビューは、ユーザーのすべてのサブドメインの後に、そのユーザーのプロファイルの行を出力するよう構成されています。プロファイルのデータとサブドメインの情報を、個々のユーザーのための設定のテンプレートに使用します。これの意味するところは、現在のユーザーのすべての行を受け取るまで、サブドメインの設定はレンダリングできないということです。
 
 <pre>
   if (!subdomainOwnerRow) {
     subdomainOwnerRow = row;
 </pre>
 
-<p>This case is true only for the first user. We’re merely setting up the initial conditions.
-
-
+<p>このケースは最初のユーザーの場合にだけ真になります。単に初期条件を設定しています。
 
 <pre>
   } else if (row.value.user != subdomainOwnerRow.value.user) {
 </pre>
 
-<p>This is the end case. It will be called only after all the subdomain rows for the current user have been exhausted. It is triggered by a row with a mismatched user, indicating that we have all the subdomain rows.
-
-
+<p>これは最後のケースです。これは、現在のユーザーのすべてのサブドメインの行が使い果たされた後にのみ呼び出されます。これは、すべてのサブドメインの行が使い果たされたことを示す、現在のユーザーと一致しないユーザーの行を引き金とします。
 
 <pre>
     send(renderUserConf(subdomainOwnerRow, subdomainRows));
 </pre>
 
-<p>We know we are ready to render everything for the current user, so we pass the profile row and the subdomain rows to a render function (which nicely hides all the gnarly nginx config details from our fair reader). The result is sent to the HTTP client, which writes it to the config file.
-
-
+<p>現在のユーザーのためのすべてをレンダリングする準備ができたことが分かったので、プロファイルの行とサブドメインの行を（ごつごつしたnginxの設定の詳細を公平な読者からうまく隠してくれる）レンダリング関数に渡します。この結果はHTTPクライアントに送信され、HTTPクライアントはそれを設定ファイルに書き込みます。
 
 <pre>
     subdomainRows = [];
     subdomainOwnerRow = row;
 </pre>
 
-<p>We’ve finished with that user, so let’s clear the rows and start working on the next user.
-
-
+<p>このユーザーについては終わったので、行をクリアーし、次のユーザーの作業を始めましょう。
 
 <pre>
   } else {
     subdomainRows.push(row);
 </pre>
 
-<p>Ahh, back to work, collecting rows.
-
-
+<p>ああ、作業に戻り、行を収集しましょう。
 
 <pre>
   }
@@ -217,39 +199,25 @@ while (row = getRow()) {
 send(renderUserConf(subdomainOwnerRow, subdomainRows));
 </pre>
 
-<p>This last bit is tricky—after the loop is finished (we’ve reached the end of the view query), we’ve still got to render the last user’s config. Wouldn’t want to forget that!
+<p>この最後の部分はトリッキーです。（最後のビュークエリーに到達し）ループが終わった後、まだ最後のユーザーの設定をレンダリングする必要があります。それを忘れてはいけません！
 
+<p>このループセクションの要点は、他のユーザーに所属する行を見るまで、特定のユーザーに所属する行を収集するということです。そのときに、最初のユーザーの出力をレンダリングし、状態をクリアーし、新しいユーザーについて作業を始めます。このようなテクニックから、リストイテレーターAPIには十分な柔軟性があるということが分かります。
 
+<p>特定の結果セットから隠される、フィルタリングされた行を含むこれらの行は、（例えば、タグクラウドを人気度でソートするための）上位<em>N</em>グループのreduce値を見付けたり、（reduce結果がインクリメンタルに保存されないことを気にしないのであれば）カスタマイズされたreduce関数を書いたりするために使われます。
 
-<p>The gist of this loop section is that we collect rows that belong to a particular user until we see a row that belongs to another user, at which point we render output for the first user, clear our state, and start working with the new user. Techniques like this show how much flexibility is allowed by the list iterator API.
+<h3 id="querying">リストのクエリー</h3>
 
-
-
-<p>More uses along these lines include filtering rows that should be hidden from a particular result set, finding the top <em>N</em> grouped reduce values (e.g., to sort a tag cloud by popularity), and even writing custom reduce functions (as long as you don’t mind that reductions are not stored incrementally).
-
-
-
-<h3 id="querying">Querying Lists</h3>
-
-<p>We haven’t looked in detail at the ways list functions are queried. Just like show functions, they are resources available on the design document. The basic path to a list function is as follows:
-
-
+<p>list関数がクエリーを受ける方法の詳細を見ていません。ちょうどshow関数と同じように、list関数はデザインドキュメントで利用可能なリソースです。list関数への基本的なパスは次の通りです。
 
 <pre>
 /db/_design/foo/_list/list-name/view-name
 </pre>
 
-<p>Because the list name and the view name are both specified, this means it is possible to render a list against more than one view. For instance, you could have a list function that renders blog comments in the Atom XML format, and then run it against both a global view of recent comments as well as a view of recent comments by blog post. This would allow you to use the same list function to provide an Atom feed for comments across an entire site, as well as individual comment feeds for each post.
+<p>リスト名とビュー名とは指定されているので、これはひとつ以上のビューに対するリストをレンダリングすることができるということを意味します。例えば、ブログのコメントをAtom XML形式でレンダリングするlist関数を持ち、そしてそれを最近のコメントのグローバルビューに対して実行するのみならず、個々のブログの投稿への最近のコメントのビューに対して実行することもできます。これにより、サイト全体のコメントのAtomフィードを提供するだけでなく、各投稿の個々のコメントフィードを提供するためにも、同じlist関数を使うことができるようになります。
 
+<p>listへのパスの後にはビュークエリーパラメーターが続きます。ちょうど通常のビューと同じように、クエリーパラメーターなしでlist関数を呼び出すと、その結果はビューのすべての行を反映するリストになります。クエリーパラメーターとともにlist関数を呼び出す場合の多くは、返ってくるデータを制限したいときでしょう。
 
-
-<p>After the path to the list comes the view query parameter. Just like a regular view, calling a list function without any query parameters results in a list that reflects every row in the view. Most of the time you’ll want to call it with query parameters to limit the returned data.
-
-
-
-<p>You’re already familiar with the view query options from <a href="views.html">Chapter 6, Finding Your Data with Views</a>. The same query options apply to the <code>_list</code> query. Let’s look at URLs side by side; see <a href="#example/1">Example 1, “A JSON view query”</a>.
-
-
+<p>ビュークエリーオプションについては、<a href="views.html">第6章・ビューによるデータの検索</a>ですでに慣れているでしょう。同じクエリーオプションが<code>_list</code>に適用されます。URLを並べて見てみましょう。<a href="#example/1">例1・JSONビュークエリー</a>を参照してください。
 
 <div class="figure" id="example/1">
 
@@ -257,15 +225,11 @@ send(renderUserConf(subdomainOwnerRow, subdomainRows));
 GET /db/_design/sofa/_view/recent-posts?descending=true&amp;limit=10
 </pre>
 
-<p class="caption">Example 1. A JSON view query
-
-
+<p class="caption">例1・JSONビュークエリー
 
 </div>
 
-<p>This view query is just asking for the 10 most recent blog posts. Of course, this query could include parameters like <code>startkey</code> or <code>skip</code>—we’re leaving them out for simplicity. To run the same query through a list function, we access it via the list resource, as shown in <a href="#example/2">Example 2, “The HTML list query”</a>.
-
-
+<p>このビュークエリーは単に最新の10件のブログの投稿を要求するものです。もちろん、このクエリーには<code>startkey</code>や<code>skip</code>のようなパラメーターを含めることができますが、ここでは単純にするために省略しています。同じクエリーをlist関数に対して実行するには、<a href="#example/2">例2・HTMLリストクエリー</a>で示すように、リストリソースを通じてアクセスします。
 
 <div class="figure" id="example/2">
 
@@ -273,15 +237,11 @@ GET /db/_design/sofa/_view/recent-posts?descending=true&amp;limit=10
 GET /db/_design/sofa/_list/index/recent-posts?descending=true&amp;limit=10
 </pre>
 
-<p class="caption">Example 2. The HTML list query
-
-
+<p class="caption">例2・HTMLリストクエリー
 
 </div>
 
-<p>The <code>index</code> list here is a function from JSON to HTML. Just like the preceding view query, additional query parameters can be applied to paginate through the list. As we’ll see in <a href="index.html#part/iii">Part III, “Example Application”</a>, once you have a working list, adding pagination is trivial. See <a href="#example/3">Example 3, “The Atom list query”</a>.
-
-
+<p>ここでの<code>index</code>リストはJSONからHTMLへの変換関数です。ちょうど前述のビュークエリーと同じように、追加のクエリーパラメーターを使ってリストをページ分割することができます。<a href="index.html#part/iii">第3部・サンプルアプリケーション</a>で見るように、動作するリストがあればページ分割を追加するのは簡単なことです。<a href="#example/3">例3・Atomリストクエリー</a>を参照してください。
 
 <div class="figure" id="example/3">
 
@@ -289,17 +249,12 @@ GET /db/_design/sofa/_list/index/recent-posts?descending=true&amp;limit=10
 GET /db/_design/sofa/_list/index/recent-posts?descending=true&amp;limit=10&amp;format=atom
 </pre>
 
-<p class="caption">Example 3. The Atom list query
-
-
+<p class="caption">例3・Atomリストクエリー
 
 </div>
 
-<p>The list function can also look at the query parameters and do things like switch that output to render based on parameters. You can even do things like pass the username into the list using a query parameter (but it’s not recommended, as you’ll ruin cache efficiency).
+<p>list関数はクエリーパラメーターも見ることができ、パラメーターに基づいてレンダリングの出力を切り替えるようなこともできます。クエリーパラメーターを使って、ユーザー名をリストに渡すようなことさえできます（しかしキャッシュ効率が台なしになるので、これはお勧めしません）。
 
+<h3 id="caching">リスト、Etag、キャッシング</h3>
 
-
-<h3 id="caching">Lists, Etags, and Caching</h3>
-
-<p>Just like show functions and view queries, lists are sent with proper HTTP Etags, which makes them cacheable by intermediate proxies. This means that if your server is starting to bog down in list-rendering code, it should be possible to relieve load by using a caching reverse proxy like Squid. We won’t go into the details of Etags and caching here, as they were covered in <a href="show.html">Chapter 8, Show Functions</a>.
-
+<p>ちょうどshow関数やビュークエリーと同じように、リストは適切なHTTP Etagとともに送信されます。これにより、中間プロキシーによってキャッシュすることができるようになります。これは、リストレンダリングのコードでサーバーが行き詰まりはじめた場合、Squidのようなキャッシングリバースプロキシーを使うことで負荷を軽減することができるということを意味します。Etagとキャッシングの詳細についてはここでは説明しませんが、これらは<a href="show.html">第8章・ショー機能</a>でカバーしています。

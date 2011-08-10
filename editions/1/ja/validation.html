@@ -1,0 +1,255 @@
+<title>Validation Functions</title>
+
+<meta charset="utf-8">
+
+<link rel="stylesheet" href="../../../style.css">
+
+<link rel="prev" href="views.html">
+
+<link rel="next" href="show.html">
+
+<script src="../../../script.js"></script>
+
+<h2 id="validation">Validation Functions</h2>
+<h2 id="validation">バリデーション機能</h2>
+
+<p>In this chapter, we look closely at the individual components of Sofa’s validation function. Sofa has the basic set of validation features you’ll want in your apps, so understanding its validation function will give you a good foundation for others you may write in the future.
+<p>この章ではSofaに実装されたバリデーション関数について見ていくことにしましょう。Sofaの例はバリデーション関数を使用したい方にとって、とてもよい参考になると思います。
+
+<p>CouchDB uses the <code>validate_doc_update</code> function to prevent invalid or unauthorized document updates from proceeding. We use it in the example application to ensure that blog posts can be authored only by logged-in users. CouchDB’s validation functions—like map and reduce functions—can’t have any side effects; they run in isolation of a request. They have the opportunity to block not only end-user document saves, but also replicated documents from other CouchDBs.
+<p>CouchDBではvalidate_doc_updateを使うことで、不当なドキュメントの更新を防ぎます。サンプルアプリケーションではログインしたユーザーのみがブログ記事を投稿できるようにするためにバリデーション関数を使用しています。CouchDBのバリデーション関数はmap関数やreduce関数のように他のプロセスに影響を与えずに独立して動作します。ドキュメントの保存のみではなく、他のCouchDBからのレプリケーションによるドキュメントの更新もバリデーション関数の対象になります。
+
+<h3 id="functions">Document Validation Functions</h3>
+<h3 id="functions">ドキュメントに対するバリデーション機能</h3>
+
+<p>To ensure that users may save only documents that provide these fields, we can validate their input by adding another member to the <code>_design/</code> document: the <code>validate_doc_update</code> function. This is the first time you’ve seen CouchDB’s external process in action. CouchDB sends functions and documents to a JavaScript interpreter. This mechanism is what allows us to write our document validation functions in JavaScript. The <code>validate_doc_update</code> function gets executed for each document you want to create or update. If the validation function raises an exception, the update is denied; when it doesn’t, the updates are accepted.
+<p>デザインドキュメントにvalidate_doc_update関数を追加することで、ユーザーによるドキュメントへの更新内容を確認することができます。この本で初めて、CouchDBの外部プロセスを使用することになります。CouchDBは関数とドキュメントをJavaScriptのインタプリタへ送信します。この仕組みにより、バリデーション関数をJavaScriptで定義できるようになります。validate_doc_update関数はドキュメントの作成や更新の度に実行されるようになります。バリデーション関数が例外を投げれば、更新は適用されません。
+
+<p>Document validation is optional. If you don’t create a validation function, no checking is done and documents with any content or structure can be written into your CouchDB database. If you have multiple design documents, each with a <code>validate_doc_update</code> function, all of those functions are called upon each incoming write request. Only if all of them pass does the write succeed. The order of the validation execution is not defined. Each validation function must act on its own. See <a href="#figure/1">Figure 1, “The JavaScript document validation function”</a>.
+<p>バリデーション関数を実装するかどうかは任意です。バリデーション関数を定義しない場合は、格納するドキュメントの内容や構造に制限はありません。複数のデザインドキュメントがそれぞれにvalidate_doc_updateを持っている場合は書き込み要求が発生した時点ですべての関数が実行されます。その場合はすべてのバリデーションをクリアした場合に更新成功となります。バリデーション関数の実効順序を定めることはできません。バリデーション関数はそれぞれ独立して動作します。
+
+<div class="figure" id="figure/1">
+
+<img src="validation/01.png">
+
+<p class="caption">Figure 1. The JavaScript document validation function
+<p class="caption">Figure 1. JavaScriptによるドキュメントのバリデーション関数
+
+</div>
+
+<p>Validation functions can cancel document updates by throwing errors. To throw an error in such a way that the user will be asked to authenticate, before retrying the request, use JavaScript code like:
+<p>バリデーション関数は例外を投げることでドキュメントの更新をキャンセルすることができます。ユーザーが認証を要求される場面で例外を投げたい場合はJavaScriptのコードを以下のように書きます。
+
+<pre>
+throw({unauthorized : message});
+</pre>
+
+<p>When you’re trying to prevent an authorized user from saving invalid data, use this:
+<p>認証済みのユーザーによる不正なデータ更新を防ぐ場合は以下のようにします。
+
+<pre>
+throw({forbidden : message});
+</pre>
+
+<p>This function throws <code>forbidden</code> errors when a post does not contain the necessary fields. In places it uses a <code>validate()</code> helper to clean up the JavaScript. We also use simple JavaScript conditionals to ensure that the <code>doc._id</code> is set to be the same as <code>doc.slug</code> for the sake of pretty URLs.
+<p>この関数は必要な項目がドキュメントに含まれていない場合に"forbidden"例外を投げます。validate()ヘルパーを使うとJavaScriptのコードをきれいに書くことができます。また、doc._idをdoc.slugと定義しているような間違いを検出することができます。
+
+<p>If no exceptions are thrown, CouchDB expects the incoming document to be valid and will write it to the database. By using JavaScript to validate JSON documents, we can deal with any structure a document might have. Given that you can just make up document structure as you go, being able to validate what you come up with is pretty flexible and powerful. Validation can also be a valuable form of documentation.
+<p>例外が発生しなかった場合、ドキュメントはデータベース内に書き込まれます。JSON形式のドキュメントを確認するのにJavaScriptを使用すると、ドキュメントの構造をチェックしていることにもなります。開発者は目的に応じて柔軟且つ、強力なバリデーション関数を定義することができます。バリデーションはドキュメントの入力フォームのように機能します。
+
+<h3 id="context">Validation’s Context</h3>
+<h3 id="context">バリデーションのおさらい</h3>
+
+<p>Before we delve into the details of our validation function, let’s talk about the context in which they run and the effects they can have.
+<p>バリデーション関数の例を詳しく説明する前に、関数が実際にどのように振舞うのかを確認してみましょう。
+
+<p>Validation functions are stored in <em>design documents</em> under the <code>validate_doc_update</code> field. There is only one per design document, but there can be many design documents in a database. In order for a document to be saved, it must pass validations on all design documents in the database (the order in which multiple validations are executed is left undefined). In this chapter, we’ll assume you are working in a database with only one validation function.
+<p>バリデーション関数はvalidate_doc_updateという項目内にデザインドキュメントの一部として格納されます。そのため、ひとつのデザインドキュメントでは、ひとつのvalidate_doc_updateのみ持つことになりますが、データベース内には複数のデザインドキュメントを持つことができるので特に問題にはならないでしょう。ドキュメントが正常に保存された場合は、全てのバリデーションをパスしたことになります（複数のバリデーション関数がある場合は実行の順序を定めることはできませんが）。この章ではひとつのバリデーション関数を利用する例を取り上げます。
+
+<h3 id="writing">Writing One</h3>
+<h3 id="writing">ひとつにまとめて書く</h3>
+
+<p>The function declaration is simple. It takes three arguments: the proposed document update, the current version of the document on disk, and an object corresponding to the user initiating the request.
+<p>関数の定義方法はとても単純です。三つの引数が必要になります。更新したい内容が含まれるドキュメント、ディスク上にあるドキュメントの最新バージョン、ユーザーからの要求情報の三種類です。
+
+<pre>
+function(newDoc, oldDoc, userCtx) {}
+</pre>
+
+<p>Above is the simplest possible validation function, which, when deployed, would allow all updates regardless of content or user roles. The converse, which never lets anyone do anything, looks like this:
+<p>上記は最もシンプルな例のひとつであり、このままではどんな更新内容も許可されてしまいます。逆に、次の例では誰もドキュメントを更新することができません。
+
+<pre>
+function(newDoc, oldDoc, userCtx) {
+  throw({forbidden : 'no way'});
+}
+</pre>
+
+<p>Note that if you install this function in your database, you won’t be able to perform any other document operations until you remove it from the design document or delete the design document. Admins can create and delete design documents despite the existence of this extreme validation function.
+<p.この関数をデータベースに登録してしまったら、デザインドキュメントから関数を削除するまで一切のドキュメント操作ができなくなります。関数の制約が有効な場合でも、管理者権限を持つアカウントはデザインドキュメントの作成と削除が可能です。
+
+<p>We can see from these examples that the return value of the function is ignored. Validation functions prevent document updates by raising errors. When the validation function passes without raising errors, the update is allowed to proceed.
+<p>こうした例からわかるように、関数でありながらも戻り値は関係ありません。バリデーション関数は例外を投げることでドキュメントの更新を防ぐ仕組みになっています。バリデーション関数で例外が発生しなければ、その更新は制約をクリアしたことになります。
+
+<h4 id="type">Type</h4>
+
+<p>The most basic use of validation functions is to ensure that documents are properly formed to fit your application’s expectations. Without validation, you need to check for the existence of all fields on a document that your MapReduce or user-interface code needs to function. With validation, you know that any saved documents meet whatever criteria you require.
+<p>バリデーション関数の最も基本的な使い方は自身のアプリケーションにおいて最適なドキュメントになっているかを確認することでしょう。バリデーションがなければ、map関数やreduce関数、ユーザーインターフェースのコードでドキュメントの項目を確認することになってしまいます。
+
+<p>A common pattern in most languages, frameworks, and databases is using types to distinguish between subsets of your data. For instance, in Sofa we have a few document types, most prominently <code>post</code> and <code>comment</code>.
+<p>ほとんどの言語やフレームワーク、データベースで共通していえるのは、データを区別するのに型を用いていることです。ですが、Sofaではpostとcommentといったドキュメントの種類ぐらいしか決まりがありません。
+
+<p>CouchDB itself has no notion of types, but they are a convenient shorthand for use in your application code, including MapReduce views, display logic, and user interface code. The convention is to use a field called <code>type</code> to store document types, but many frameworks use other fields, as CouchDB itself doesn’t care which field you use. (For instance, the CouchRest Ruby client uses <code>couchrest-type</code>).
+<p>CouchDB自体はデータの型を持たないため、アプリケーションのコードを気軽に書くことができます。ビューにおけるmap関数やreduce関数、画面表示処理やユーザーインターフェースのコードなどです。ドキュメントの種類を記録するために"type"のような項目を使う場合もありますが、多くのフレームワークでは他の項目を使用することが多いでしょう。(例えばCouchRestのRubyクライアントでcouchrest-typeという項目を使うような例はありますが)
+
+<p>Here’s an example validation function that runs only on posts:
+<p>こちらはpostメソッドのみに対応したバリデーション関数の例です。
+
+<pre>
+function(newDoc, oldDoc, userCtx) {
+  if (newDoc.type == "post") {
+    // validation logic goes here
+  }
+}
+</pre>
+
+<p>Since CouchDB stores only one validation function per design document, you’ll end up validating multiple types in one function, so the overall structure becomes something like:
+<p>CouchDBではデザインドキュメントひとつにつき、バリデーション関数はひとつしか定義できません。以下のコードのように一つの関数で複数の種類に対応したほうがよい場合があります。
+
+<pre>
+function(newDoc, oldDoc, userCtx) {
+  if (newDoc.type == "post") {
+    // validation logic for posts
+  }
+  if (newDoc.type == "comment") {
+    // validation logic for comments
+  }
+  if (newDoc.type == "unicorn") {
+    // validation logic for unicorns
+  }
+}
+</pre>
+
+<p>It bears repeating that <code>type</code> is a completely optional field. We present it here as a helpful technique for managing validations in CouchDB, but there are other ways to write validation functions. Here’s an example that uses <em>duck typing</em> instead of an explicit <code>type</code> attribute:
+<p>なんども書きますが、typeは任意で用いる項目です。CouchDBでバリデーションを実装するのに有用な技術ですが、バリデーションは他の書き方でも実装することができます。次の例はtypeを使わないでバリデーションを実装するやり方です。
+
+<pre>
+function(newDoc, oldDoc, userCtx) {
+  if (newDoc.title &amp;&amp; newDoc.body) {
+    // validate that the document has an author
+  }
+}
+</pre>
+
+<p>This validation function ignores the <code>type</code> attribute altogether and instead makes the somewhat simpler requirement that any document with both a title and a body must have an author. For some applications, typeless validations are simpler. For others, it can be a pain to keep track of which sets of fields are dependent on one another.
+<p>この関数ではtype項目の値によって処理を分岐させていません。代わりにドキュメントはtitleとbodyという項目を持っている必要があります。アプリケーションによってはtypeでハンドリングしないほうが関数をシンプルに書ける場合があります。
+
+<p>In practice, many applications end up using a mix of typed and untyped validations. For instance, Sofa uses document types to track which fields are required on a given document, but it also uses duck typing to validate the structure of particular named fields. We don’t care what sort of document we’re validating. If the document has a <code>created_at</code> field, we ensure that the field is a properly formed timestamp. Similarly, when we validate the author of a document, we don’t care what type of document it is; we just ensure that the author matches the user who saved the document.
+<p>実際の、多くのアプリケーションはtypeで分類する関数と分類しない関数との両方を使うことになるでしょう。例えば、Sofaでは各ドキュメントに要求される項目を決めるのにtype項目を使用しており、また、名前の項目に適切な値であることを確認するためにもバリデーションを使用しています。その他の例：created_at項目のタイムスタンプ表記について確認している時に、ドキュメントの構成は確認されない。同様に、ドキュメントの著者を確認しているときにドキュメントの種類を確認することはできない。単に、著者とドキュメントを更新しようとしたユーザーが一致していることしか確認できません。
+
+<h4 id="required">Required Fields</h4>
+
+<p>The most fundamental validation is ensuring that particular fields are available on a document. The proper use of required fields can make writing MapReduce views much simpler, as you don’t have to test for all the properties before using them—you know all documents will be well-formed.
+<p>もっとも基本となるバリデーションはドキュメントの中で項目が有効であるかを確かめることです。バリデーションをうまく使えば、map,reduce,viewなどをよりシンプルに書くことができます。すべての属性をコードの中でチェックする必要がなくなるかもしれません（？？？）バリデーション関数のおかげでドキュメントは制約をクリアしていることになるからです。
+
+<p>Required fields also make display logic much simpler. Nothing says amateur like the word <code>undefined</code> showing up throughout your application. If you know for certain that all documents will have a field, you can avoid lengthy conditional statements to render the display differently depending on document structure.
+<p>バリデーション関数を使用して項目の条件を定めることは画面への表示処理をよりシンプルにする効果もあります。アプリケーション側で想定していない項目や用語が何も知らないユーザーにより登録されるのを防ぎます。すべてのドキュメントが項目を持つと決まっているならば、ドキュメントの構造に従って表示処理を変更するためのロジックは不要になります。
+
+<p>Sofa requires a different set of fields on posts and comments. Here’s a subset of the Sofa validation function:
+<p>Sofaでは記事の投稿時とコメントの投稿時によって異なった項目を要求します。以下はSofaのバリデーション関数の例です。
+
+<pre>
+function(newDoc, oldDoc, userCtx) {
+  function require(field, message) {
+    message = message || "Document must have a " + field;
+    if (!newDoc[field]) throw({forbidden : message});
+  };
+
+  if (newDoc.type == "post") {
+    require("title");
+    require("created_at");
+    require("body");
+    require("author");
+  }
+  if (newDoc.type == "comment") {
+    require("name");
+    require("created_at");
+    require("comment", "You may not leave an empty comment");
+  }
+}
+</pre>
+
+<p>This is our first look at actual validation logic. You can see that the actual error throwing code has been wrapped in a helper function. Helpers like the <code>require</code> function just shown go a long way toward making your code clean and readable. The <code>require</code> function is simple. It takes a field name and an optional message, and it ensures that the field is not empty or blank.
+<p>実際のバリデーションロジックを例にして解説するのは今回が初めてになります。エラーを投げるコードはヘルパー関数の中にあるのがわかります。require関数のようなヘルパーはコードの可読性を向上させます。require関数は実にシンプルです。項目名とメッセージを引数に持ち、項目の内容が空白になっていないことを確認しています。
+
+<p>Once we’ve declared our helper function, we can simply use it in a type-specific way. Posts require a <code>title</code>, a <code>timestamp</code>, a <code>body</code>, and an <code>author</code>. Comments require a <code>name</code>, a <code>timestamp</code>, and the <code>comment</code> itself. If we wanted to require that every single document contained a <code>created_at</code> field, we could move that declaration outside of any type conditional logic.
+<p>一旦、ヘルパー関数を定義すれば、あとは必要に応じて呼び出すだけです。typeがPostsであれば、項目としてtitle,timestamp,body,authorを要求します。Commentsの場合はname,timestamp,commentになります。もし、すべてのドキュメントでcreated_atという項目を必須にしたい場合は該当するrequire関数をifステートメントの外側に移すことで対応することができます。
+
+<h4 id="timestamps">Timestamps</h4>
+
+<p>Timestamps are an interesting problem in validation functions. Because validation functions are run at replication time as well as during normal client access, we can’t require that timestamps be set close to the server’s system time. We can require two things: that timestamps do not change after they are initially set, and that they are well formed. What it means to be well formed depends on your application. We’ll look at Sofa’s particular requirements here, as well as digress a bit about other options for timestamp formats.
+<p>タイムスタンプはバリデーション関数の中では興味深い問題です。バリデーション関数はレプリケーションが実行されるときも動作します。その場合、サーバーのシステム時間に近いタイムスタンプを取得することができません。タイムスタンプでよく要求される要件は次の二つでしょう。ひとつは一度設定したら変更されないこと、もうひとつは体裁が要件に従って均一であることです。どの体裁が望ましいかはアプリケーションの仕様次第です。タイムスタンプとは少し反れますが、Sofaがバリデーション関数で要求している内容を見てみましょう。
+
+
+<p>First, let’s look at a validation helper that does not allow fields, once set, to be changed on subsequent updates:
+<p>初めに、一度設定したら、更新を認めないようにする関数を見てみましょう。
+
+<pre>
+function(newDoc, oldDoc, userCtx) {
+  function unchanged(field) {
+    if (oldDoc &amp;&amp; toJSON(oldDoc[field]) != toJSON(newDoc[field]))
+      throw({forbidden : "Field can't be changed: " + field});
+  }
+  unchanged("created_at");
+}
+</pre>
+
+<p>The <code>unchanged</code> helper is a little more complex than the <code>require</code> helper, but not much. The first line of the function prevents it from running on initial updates. The <code>unchanged</code> helper doesn’t care at all what goes into a field the first time it is saved. However, if there exists an already-saved version of the document, the <code>unchanged</code> helper requires that whatever fields it is used on are the same between the new and the old version of the document.
+<p>unchanged関数はrequire関数よりも少し複雑です。関数の一行目はドキュメントの更新を防ぐために書いています。unchanged関数ではデータ新規追加のみ可能ですが、二回目以降のデータは古いバージョンのドキュメントにある内容と同じでなければなりません。
+
+<p>JavaScript’s equality test is not well suited to working with deeply nested objects. We use CouchDB’s JavaScript runtime’s built-in <code>toJSON</code> function in our equality test, which is better than testing for raw equality. Here’s why:
+<p>Javascriptの値のチェックは深くネストされたオブジェクト内で動作させるには最適ではありません。CouchDBのJavaScript実行環境に組み込まれているtoJSON関数を使うと、以下のように簡単に値確認することができます。
+
+<pre>
+js&gt; [] == []
+false
+</pre>
+
+<p>JavaScript considers these arrays to be different because it doesn’t look at the contents of the array when making the decision. Since they are distinct objects, JavaScript must consider them not equal. We use the <code>toJSON</code> function to convert objects to a string representation, which makes comparisons more likely to succeed in the case where two objects have the same contents. This is not guaranteed to work for deeply nested objects, as <code>toJSON</code> may serialize objects.
+<p>JavaScriptではこれら二つの配列を違うものとして認識します。配列の中身が比較の対象にならないためです。両者は異なるオブジェクトであるため、Javascriptでは等しくないと判定されます。toJSON関数を使うことで、オブジェクトの内容を文字列に変換すれば、当初の目論見どおりの結果が期待できます。toJSON関数はオブジェクトをシリアライズに処理するため、深くネストされたオブジェクトでは動作を保証できないことがあります。
+
+<div class="aside note">
+
+<p>The <code>js</code> command gets installed when you install CouchDB’s SpiderMonkey dependency. It is a command-line application that lets you parse, evaluate, and run JavaScript code. <code>js</code> lets you quickly test JavaScript code snippets like the one previously shown. You can also run a syntax check of your JavaScript code using <code>js file.js</code>. In case CouchDB’s error messages are not helpful, you can resort to testing your code standalone and get a useful error report.
+<p>jsコマンドはCouchDBで使用しているspidermonkeyのインストール後に使えるようになります。このコマンドを使うことでJavaScriptのコードをコマンドラインから実行できるようになります。デバッグにも便利です。文法のチェックにも使用できるでしょう。CouchDBのエラーメッセージ自体が分かりにくい場合はjsコマンドが役に立つかもしれません。
+
+</div>
+
+<h4 id="authorship">Authorship</h4>
+
+<p>Authorship is an interesting question in distributed systems. In some environments, you can trust the server to ascribe authorship to a document. Currently, CouchDB has a simple built-in validation system that manages <em>node admins</em>. There are plans to add a database admin role, as well as other roles. The authentication system is pluggable, so you can integrate with existing services to authenticate users to CouchDB using an HTTP layer, using LDAP integration, or through other means.
+<p>ユーザー認証は分散するシステムにおいては興味深い問題です。複数の環境にドキュメントが分散して存在していても、ドキュメントに関係するユーザーのアカウントを信頼できるようになります。現在のCouchDBにはCouchDB上のシステム管理者を認証する機能が組み込まれています。今後はデータベース単位での管理者権限を実装する計画もあるようです。認証システムはプラガブルに設計されているため、LDAPなどの既にある認証システムに置き換えることも可能です。
+
+<p>Sofa uses the built-in node admin account system and so is best suited for single or small groups of authors. Extending Sofa to store author credentials in CouchDB itself is an exercise left to the reader.
+<p>Sofaではすでに実装されている管理者アカウント認証を使用しています。利用者の規模が一人、または小規模のグループである場合はよいやり方です。Sofaにおいて投稿者の名前をCouchDBに格納するように機能を拡張することはこの本の読者にとってよい練習になると思います。
+
+<p>Sofa’s validation logic says that documents saved with an author field must be saved by the author listed on that field:
+<p>Sofaのバリデーションでは、ドキュメントの作成者のみがドキュメントを更新することができます。
+
+<pre>
+function(newDoc, oldDoc, userCtx) {
+  if (newDoc.author) {
+    enforce(newDoc.author == userCtx.name,
+      "You may only update documents with author " + userCtx.name);
+  }
+}
+</pre>
+
+<h3 id="wrap">Wrapping Up</h3>
+<h3 id="wrap">まとめ</h3>
+
+<p>Validation functions are a powerful tool to ensure that only documents you expect end up in your databases. You can test writes to your database by content, by structure, and by user who is making the document request. Together, these three angles let you build sophisticated validation routines that will stop anyone from tampering with your database.
+<p>ドキュメントが望ましい姿になっているかを常に確認したい場合、バリデーション関数は強力なツールになるでしょう。バリデーションにより、ドキュメントの内容、構造とドキュメントを操作するユーザーを確認することができます。また、これら三つの視点をバリデーション関数として実装することは、第三者による不正行為に歯止めをかけることにもつながります。
+
+<p>Of course, validation functions are no substitute for a full security system, although they go a long way and work well with CouchDB’s other security mechanisms. Read more about CouchDB’s security in <a href="security.html">Chapter 22, Security</a>.
+<p>もちろん、バリデーション関数のみではセキュリティを担保するには足りません。CouchDBの他のセキュアな仕組みを利用する必要があります。CouchDBのセキュリティについては後のセキュリティの章を読んでください。

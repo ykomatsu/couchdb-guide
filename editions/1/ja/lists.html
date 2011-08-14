@@ -11,18 +11,25 @@
 <script src="../../../script.js"></script>
 
 <h2 id="lists">Viewing Lists of Blog Posts</h2>
+<h2 id="lists">viewによるリスト表示</h2>
 
 <p>The last few chapters dealt with getting data into and out of CouchDB. You learned how to model your data into documents and retrieve it via the HTTP API. In this chapter, we’ll look at the views used to power Sofa’s index page, and the list function that renders those views as HTML or XML, depending on the client’s request.
+<p>残りはCouchDBのデータ入出力についてです。データをどのようにドキュメントとして設計するか、HTTPによるAPIを介してどのようにドキュメントを操作するかをこれまで学習してきました。この章では、viewを取り扱います。クライアントの要求に応じてHTMLやXML形式にドキュメントをレンダリングしてくれるlist関数が主なテーマになります。
 
 <p>Now that we’ve successfully created a blog post and rendered it as HTML, we’ll be building the front page where visitors will land when they’ve found your blog. This page will have a list of the 10 most recent blog posts, with titles and short summaries. The first step is to write the MapReduce query that constructs the index used by CouchDB at query time to find blog posts based on when they were written.
+<p>これまでの解説で、記事を書いてブログに投稿し、HTMLとして表示できるようになりました。あとは閲覧者向けのフロントページを作成すればいいことになります。フロントページには直近の投稿をタイトルと概要のみリスト形式で表示させるようにします。まずはCouchDBに対するmap&reduceの問い合わせを書くところから始めましょう。
 
 <p>In <a href="views.html">Chapter 6, Finding Your Data with Views</a>, we noted that reduce isn’t needed for many common queries. For the index page, we’re only interested in an ordering of the posts by date, so we don’t need to use a reduce function, as the map function alone is enough to order the posts by date.
+<p>viewによるデータ検索の章で、reduce関数は必須ではない点を説明しました。今回も日付順に投稿を表示できればそれでよいため、reduce関数は必要ありません。map関数で十分です。
 
 <h3 id="map">Map of Recent Blog Posts</h3>
+<h3 id="map">直近の記事を表示するためのmap関数</h3>
 
 <p>You’re now ready to write the map function that builds a list of all blog posts. The goals for this view are simple: sort all blog posts by date.
+<p>ブログ記事の一覧を用事するためのmap関数を書いていきましょう。このviewの目的は単純です。日付順に記事を並び替えればよいのです。
 
 <p>Here is the source code for the view function. I’ll call out the important bits as we encounter them.
+<p>以下はviewの関数を定義したコードです。単純ではありますが、とても重要な内容が含まれています。
 
 <pre>
 function(doc) {
@@ -30,14 +37,17 @@ function(doc) {
 </pre>
 
 <p>The first thing we do is ensure that the document we’re dealing with is a post. We don’t want comments or anything other than blog posts getting on the front page. The expression <code>doc.type == "post"</code> evaluates to true for posts but no other kind of document. In <a href="validation.html">Chapter 7, Validation Functions</a>, we saw that the validation function gives us certain guarantees about posts, designed to make us comfortable about putting them on the front page of our blog.
+<p>最初はドキュメントが"投稿"であるかを確認します。ブログの記事ではないドキュメントにコメントを書くことなど、だれも望んではいないでしょう。doc.type == "post"でドキュメントの種類を判別しています。バリデーション機能の章で、バリデーション関数が投稿内容の検証に有効である点を説明しました。ドキュメントの種別といった処理自体をハンドリングするのに有用な部分ではなく、内容そのものへの検証はバリデーション関数を利用するとよいでしょう。
 
 <pre>
     var summary = (doc.html.replace(/&lt;(.|\n)*?&gt;/g, '').substring(0,350) + '...');
 </pre>
 
 <p>This line shortens the blog post’s HTML (generated from Markdown before saving) and strips out most tags and images, at least well enough to keep them from showing up on the index page, for brevity.
+<p>この行は記事の要約として本来のHTML(Markdown記法で書いたものから生成されたもの)から文字列を抜き出しています。フロントページに記事の要約として表示させるときに使います。
 
 <p>The next section is the crux of the view. We’re emitting for each document a key (<code>doc.created_at</code>) and a value. The key is used for sorting, so that we can pull out all the posts in a particular date range efficiently.
+<p>次のところはviewにとってのポイントとなる部分です。それぞれのドキュメントから出力するキー(ここではdoc.created_at)とバリューを指定しています。キーはドキュメントを並び替えるのに使われます。これをうまく活用し、ブログの記事を投稿日付を基準に効率よく並び替えています。
 
 <pre>
     emit(doc.created_at, {
@@ -49,6 +59,7 @@ function(doc) {
 </pre>
 
 <p>The value we’ve emitted is a JavaScript object, which copies some fields from the document (but not all), and the summary string we’ve just generated. It’s preferable to avoid emitting entire documents. As a general rule, you want to keep your views as lean as possible. Only emit data you plan to use in your application. In this case we emit the summary (for the index page), the HTML (for the Atom feed), the blog post title, and its author.
+<p>出力する値はJavaScriptのオブジェクトであり、ドキュメントの項目から値をコピーしたものもあります。summaryの部分は先ほどの処理でドキュメントから抽出しました。ドキュメントの内容を全て出力することは控えたほうがよいでしょう。一般的にviewはある目的に特化した形で定義する傾向があります。そうすると、viewから出力したデータは特定のアプリケーションでのみ使用するようなります。ここではsummary（フロントページで使用する）やhtml(atomフィードとして使用する),titleやauthorといったようにドキュメントから抽出したデータのまとまりがそれに該当します。
 
 <pre>
   }
@@ -56,6 +67,7 @@ function(doc) {
 </pre>
 
 <p>You should be able to follow the definition of the previous map function just fine by now. The <code>emit()</code> call creates an entry for each blog post document in our view’s result set. We’ll call the view <code>recent-posts</code>. Our design document looks like this now:
+<p>ここまで解説したviewをmap関数として定義します。emit関数が呼び出される度にブログ記事のドキュメントがview実行時の結果として返ってきます。例で扱っているviewは"recent-post"と名前を付けています。デザインドキュメントは以下のようになります。
 
 <pre>
 {
@@ -72,38 +84,50 @@ function(doc) {
 </pre>
 
 <p>CouchApp manages aggregating the filesystem files into our JSON design document, so we can edit our view in a file called <code>views/recent-posts/map.js</code>. Once the map function is stored on the design document, our view is ready to be queried for the latest 10 posts. Again, this looks very similar to displaying a single post. The only real difference now is that we get back an array of JSON objects instead of just a single JSON object.
+<p>CouchAppは複数のファイルをとりまとめ、JSON形式で書かれたデザインドキュメントに変換してくれます。map関数であれば、views/recent-posts/map.jsというファイルにコードを書いておきます。
 
 <p>The GET request to the URI is:
+<p>URLにGETリクエストを発行します。
 
 <pre>
 /blog/_design/sofa/_view/recent-posts
 </pre>
 
 <p>A view defined in the document <code>/database/_design/designdocname</code> in the <code>views</code> field ends up being callable under <code>/database/_design/designdocname/_view/viewname</code>.
+<p>viewは/database/_design/designdocnameの中に定義されています。使用するときは/database/_design/designdocname/_view/viewnameのように指定します。
 
 <p>You can pass in HTTP query arguments to customize your view query. In this case, we pass in:
+<p>viewを使って問い合わせをするときに、いくつか引数を指定することができます。たとえば、以下のような引数です。
 
 <pre>
 descending: true, limit: 5
 </pre>
 
 <p>This gets the latest post first and only the first five posts in all.
+<p>投稿を最新順に5件表示させる場合はこのようにパラメータを指定します。
+
 
 <p>The actual view request URL is:
+<p>viewを実行するときの具体的なURLは以下のようになります。
 
 <pre>
 /blog/_design/sofa/_view/recent-posts?descending=true&amp;limit=5
 </pre>
 
 <h3 id="rendering">Rendering the View as HTML Using a List Function</h3>
+<h3 id="rendering">list関数を使ってviewをHTMLとして表示する</h3>
 
 <p>The <code>_list</code> function was covered in detail in <a href="design.html">Chapter 5, Design Documents</a>. In our example application, we’ll use a JavaScript list function to render a view of recent blog posts as both XML and HTML formats. CouchDB’s JavaScript view server also ships with the ability to respond appropriately to HTTP content negotiation and Accept headers.
+<p>_list APIについてはデザインドキュメントの章で詳しく解説しています。サンプルアプリケーションでは、ブログとしてのドキュメントをXMLとHTMLの両方にレンダリングするためにlist関数を使用しています。CouchDBが用いているサーバーサイドのJavaScriptによるviewはHTTPのコンテントネゴシエーションやヘッダ処理にも的確に対応してくれます。
 
 <p>The essence of the <code>_list</code> API is a function that is fed one row at a time and sends the response back one chunk at a time.
+<p>_list APIの特徴はデータを1行ごとに処理し、処理結果をその都度返すようになっているところです。
 
 <h4 id="function">Sofa’s List Function</h4>
+<h4 id="function">Sofaのlist関数</h4>
 
 <p>Let’s take a look at Sofa’s list function. This is a rather long listing, and it introduces a few new concepts, so we’ll take it slow and be sure to cover everything of interest.
+<p>Sofaのlist関数を見てみましょう。コードが少し長めで、いくつか新しい内容が含まれているため、ゆっくりと解説していこうと思います。
 
 <pre>
 function(head, req) {
@@ -116,6 +140,7 @@ function(head, req) {
 </pre>
 
 <p>The top of the function declares the arguments <code>head</code> and <code>req</code>. Our function does not use <code>head</code>, just <code>req</code>, which contains information about the request such as the headers sent by the client and a representation of the query string as sent by the client. The first lines of the function are CouchApp macros that pull in code and data from elsewhere in the design document. As we’ve described in more detail in <a href="managing.html">Chapter 11, Managing Design Documents</a>, these macros allow us to work with short, readable functions that pull in library code from elsewhere in the design document. Our list function uses the CouchApp JavaScript helpers for generating URLs (<code>path.js</code>), for working with date objects (<code>date.js</code>), and the template function we’re using to render HTML.
+<p>関数のはじめにはheadとreqという引数が定義されています。今回はheadは使用せず、reqのみを使用しています。reqにはクライアント側から送信されたクエリーの文字列やヘッダ情報が格納されています。最初の行はCouchAppのマクロです。マクロを使うことで、デザインドキュメントの中に含まれている別出しのコードとデータを展開することができます。マクロについての詳細はデザインドキュメントの章で取り扱っています。マクロを使うと、ライブラリとしてまとめてあるコードを読み込むことで実装しようとしているコードを短くすると共に可読性を向上させることができます。ここではCouchAppのJavaScriptヘルパー関数を読み込んでいます。urlを生成する関数(path.js)や、日付処理をするためのオブジェクト(date.js)、HTMLにレンダリングするためのテンプレート関数などです。
 
 <pre>
   var indexPath = listPath('index','recent-posts',{descending:true, limit:5});
@@ -123,14 +148,17 @@ function(head, req) {
 </pre>
 
 <p>The next two lines of the function generate URLs used to link to the index page itself, as well as the XML Atom feed version of it. The <code>listPath</code> function is defined in <code>path.js</code>—the upshot is that it knows how to link to lists generated by the same design document it is run from.
+<p>次の2行はトップページへのリンクに使うURLを生成するための関数です。XML Atomフィードによるパターンも入っています。listPath関数はpath.js内で定義されており、デザインドキュメントで生成されたlistへのリンクを作成してくれます。
 
 <p>The next section of the function is responsible for rendering the HTML output of the blog. Refer to <a href="show.html">Chapter 8, Show Functions</a> for details about the API we use here. In short, clients can describe the format(s) they prefer in the HTTP Accept header, or in a <code>format</code> query parameter. On the server, we declare which formats we provide, as well as assign each format a priority. In cases where the client accepts multiple formats, the first declared format is returned. It is not uncommon for browsers to accept a wide range of formats, so take care to put HTML at the top of the list, or else you can end up with browsers receiving alternate formats when they expect HTML.
+<p>その次の部分はHTMLにレンダリングするための記述です。詳しい解説はShow関数の章を見てください。クライアント側でHTTP Acceptヘッダや問い合わせのパラメーターに従って、任意の書式でドキュメントを扱うことができる一方で、サーバー側でもどの書式でドキュメントを提供するのか決めることができます。クライアント側で複数の書式を受け入れることができる場合は最初に定義した書式が採用されます。書式は様々な種類のブラウザーで共有して使うことになります。HTMLを出力する場合は注意が必要です。各ブラウザーごとに違った解釈をされる場合があります。
 
 <pre>
   provides("html", function() {
 </pre>
 
 <p>The <code>provides</code> function takes two arguments: the name of the format (which is keyed to a list of default MIME types) and a function to execute when rendering that format. Note that when using <code>provides</code>, all <code>send</code> and <code>getRow</code> calls must happen within the render function. Now let’s look at how the HTML is actually generated.
+<p>provides関数には、書式の名前（デフォルトのmime-typesから選択したもの）とレンダリングするときに実行する関数といった二つの引数を設定します。provides関数を使うときは、send関数とgetRow関数はレンダリングしている関数のなかでのみ使用できます。今度はHTMLがどのように出力されるのか見ていきましょう。
 
 <pre>
     send(template(templates.index.head, {
@@ -143,8 +171,10 @@ function(head, req) {
 </pre>
 
 <p>The first thing we see is a template being run with an object that contains the blog title and a few relative URLs. The template function used by Sofa is fairly simple; it just replaces some parts of the template string with passed in values. In this case, the template string is stored in the variable <code>templates.index.head</code>, which was imported using a CouchApp macro at the top of the function. The second argument to the template function are the values that will be inserted into the template; in this case, <code>title</code>, <code>feedPath</code>, <code>newPostPath</code>, <code>index</code>, and <code>assets</code>. We’ll look at the template itself later in this chapter. For now, it’s sufficient to know that the template stored in <code>templates.index.head</code> renders the topmost portion of the HTML page, which does not change regardless of the contents of our recent posts view.
+<p>send関数の最初の引数にはテンプレートを指定します。ブログのタイトルや関連するURLなどを表示させるときの体裁や文書構造が含まれます。Sofaでのtemplate関数の使い方はとてもシンプルです。テンプレート内にある特定の文字列を後から置き換えているだけです。この場合は、テンプレートとなる文字列はtemplates.index.headという変数に格納されています。この変数はCouchAppのマクロとしてコードの冒頭で展開しているものです。二番目の引数はテンプレートへ挿入するための値を指定します。この例では、title, feedPath, newPostPath, index, and assets を指定しています。HTMLとして出力すべき大半の内容はテンプレートとしてtemplates.index.headの中にあります。テンプレートに書かれてある内容は最近の投稿内容に依存しない作りになっています。テンプレート自体はこの章の後半で詳しく見ていこうと思います。
 
 <p>Now that we have rendered the top of the page, it’s time to loop over the blog posts, rendering them one at a time. The first thing we do is declare our variables and our loop:
+<p>トップページをレンダリングするには各記事ごとに繰り返し実行する処理が必要になります。変数とループ処理を次のように定義するとよいでしょう。
 
 <pre>
     var row, key;
@@ -154,6 +184,7 @@ function(head, req) {
 </pre>
 
 <p>The <code>row</code> variable is used to store each JSON view row as it is sent to our function. The <code>key</code> variable plays a different role. Because we don’t know ahead of time which of our rows will be the last row to be processed, we keep the key available in its own variable, to be used after all rows are rendered, to generate the link to the next page of results.
+<p>rowという変数はviewの各結果ごとに、自分たちで定義する関数の引数として取得することができます。key変数はさらにことなる役割を担っています。単純にrowだけを見ていては最後のデータ行がいつやってくるのか判断できません。key変数はrow.keyのデータを格納しておいて、全てのデータ行がレンダリングされたら次のページへのリンクを生成する処理に移行するための基準として使っています。
 
 <pre>
 send(template(templates.index.row, {
@@ -166,8 +197,10 @@ send(template(templates.index.row, {
 </pre>
 
 <p>Now that we have the row and its key safely stored, we use the template engine again for rendering. This time we use the template stored in <code>templates.index.row</code>, with a data item that includes the blog post title, a URL for its page, the summary of the blog post we generated in our map view, and the date the post was created.
+<p>rowとkeyをうまく獲得できたら、再びテンプレートでレンダリングします。今回はtemplates.index.rowというテンプレートを使っています。そしてテンプレートに対して記事のタイトル、ページのURL、viewのmap関数で生成した記事の要約、記事が投稿された日付を引き渡しています。
 
 <p>Once all the blog posts included in the view result have been listed, we’re ready to close the list and finish rendering the page. The last string does not need to be sent to the client using <code>send()</code>, but it can be returned from the HTML function. Aside from that minor detail, rendering the tail template should be familiar by now.
+<p>viewの結果が全て処理されて一覧として表示されたら、あとは処理を終了させるだけです。最後の文字列はsend関数を使わずに、return文のところで実行します。return文で末尾を表示させるためのテンプレートを読み込んで、HTMLの表示処理を終了させるとよいでしょう。詳細は別として、末尾のテンプレートもこれまでと同様のやり方で記述します。
 
 <pre>
     return template(templates.index.tail, {
@@ -178,12 +211,14 @@ send(template(templates.index.row, {
 </pre>
 
 <p>Once the tail has been returned, we close the HTML generating function. If we didn’t care to offer an Atom feed of our blog, we’d be done here. But we know most readers are going to be accessing the blog through a feed reader or some kind of syndication, so an Atom feed is crucial.
+<p>ここまでで、HTMLを生成する関数は終了です。ここではAtomフィードには触れませんでしたが、実際にブログを運用するときには実装したほうがよいでしょう。RSSリーダーでブログを読む人たちを無視することはできません。
 
 <pre>
   provides("atom", function() {
 </pre>
 
 <p>The Atom generation function is defined in just the same way as the HTML generation function—by being passed to <code>provides()</code> with a label describing the format it outputs. The general pattern of the Atom function is the same as the HTML function: output the first section of the feed, then output the feed entries, and finally close the feed.
+<p>Atom配信フォーマットで出力する場合もHTMLのときと同じです。provides関数の引数として出力時の書式を指定します。関数の中身のHTMLとほぼ同じです。フィードのヘッダ、フィードの中身、終了処理のそれぞれを定義していきます。
 
 <pre>
     // we load the first row to find the most recent change date
@@ -191,6 +226,7 @@ send(template(templates.index.row, {
 </pre>
 
 <p>One difference is that for the Atom feed, we need to know when it was last changed. This will normally be the time at which the first item in the feed was changed, so we load the first row before outputting any data to the client (other than HTTP headers, which are set when the <code>provides</code> function picks the format). Now that we have the first row, we can use the date from it to set the Atom feed’s last-updated field.
+<p>HTMLと違うのは、最終更新日がいつであるかを知る必要があるところです。これには、フィード内の最初のアイテムが変更されたときの時間を取得して対応します。タイミングとしてはクライアントへデータを出力する前に取得しておきます(HTTPヘッダーから取得するのではなく、provides関数がレンダリングするときに日付を取得して設定します)。最初の行データを取得するときにAtomフィードの最終更新日を設定するようにします。
 
 <pre>
     // generate the feed header
@@ -203,6 +239,7 @@ send(template(templates.index.row, {
 </pre>
 
 <p>The <code>Atom.header</code> function is defined in <code>lib/atom.js</code>, which was imported by CouchApp at the top of our function. This library uses JavaScript’s E4X extension to generate feed XML.
+<p>Atom.header関数はCouchAppのlib/atom.jsからインポートして使用します。XML形式のフィードを生成するために、このライブラリーはJavaScriptのE4Xエクステンションを使用しています。
 
 <pre>
     // send the header to the client
@@ -210,6 +247,7 @@ send(template(templates.index.row, {
 </pre>
 
 <p>Once the feed header has been generated, sending it to the client uses the familiar <code>send()</code> call. Now that we’re done with the header, we’ll generate each Atom entry, based on a row in the view. We use a slightly different loop format in this case than in the HTML case, as we’ve already loaded the first row in order to use its timestamp in the feed header.
+<p>フィードのヘッダーを生成したら、send関数でクライアント側へヘッダーを送信します。その後、残りのデータ行から各エントリーを生成していきます。最初のデータ行を更新日付を取得するタイミングで読み込んでいるため、ループのロジックがHTMLのときと少し異なります。
 
 <pre>
     // loop over all rows
@@ -218,6 +256,7 @@ send(template(templates.index.row, {
 </pre>
 
 <p>The JavaScript <code>do</code>/<code>while</code> loop is similar to the <code>while</code> loop used in the HTML function, except that it’s guaranteed to run at least once, as it evaluates the conditional statement after each iteration. This means we can output an entry for the row we’ve already loaded, before calling <code>getRow()</code> to load the next entry.
+<p>HTMLで出力するときとほとんど同じですが、do / whileのループを使用しているため、最低でも一回は括弧の中の処理が実行されます。行データが一件はあることが前提になるため、if文でデータ行の有無を最初に確認しています。次のgetRow関数が実行されて次のエントリーが読み込まれる前に、読み込んだデータ行をエントリーとして出力することができます。
 
 <pre>
         // generate the entry for this row
@@ -236,6 +275,7 @@ send(template(templates.index.row, {
 </pre>
 
 <p>Rendering the entries also uses the Atom library in <code>atom.js</code>. The big difference between the Atom entries and the list items in HTML, is that for our HTML screen we only output the summary of the entry text, but for the Atom entries we output the entire entry. By changing the value of <code>content</code> from <code>row.value.html</code> to <code>row.value.summary</code>, you could change the Atom feed to only include shortened post summaries, forcing subscribers to click through to the actual post to read it.
+<p>エントリーをレンダリングするときはatom.jsにあるAtomのライブラリーも使用します。レンダリングする内容を設定している部分を見ると、HTMLのときはエントリーの要約を出力しているのに対し、Atomで配信するときはエントリー全体を出力しているのがわかります。contentへ設定する値を、row.value.htmlからrow.value.summaryに変更すると、フィードの内容をエントリーの要約のみにすることができます。読者が実際の記事全体を読みたい場合はクリックして実際のブログを表示してもらうことになります。
 
 <pre>
       } while (row = getRow());
@@ -243,6 +283,7 @@ send(template(templates.index.row, {
 </pre>
 
 <p>As we mentioned earlier, this loop construct puts the loop condition at the end of the loop, so here is where we load the next row of the loop.
+<p>先ほども述べたように、コードの末尾でループ処理の終了条件を定義しています。ここで新しいデータ行を読み込んでいます。
 
 <pre>
     // close the loop after all rows are rendered
@@ -252,10 +293,13 @@ send(template(templates.index.row, {
 </pre>
 
 <p>Once all rows have been looped over, we end the feed by returning the closing XML tag to the client as the last chunk of data.
+<p>全てのデータ行に対する処理が終了したら、XMLのタグを終了するための処理を実行してクライアントへまとまったデータを返すようにします。
 
 <h4 id="final">The Final Result</h4>
+<h4 id="final">ブログの完成</h4>
 
 <p><a href="#figure/1">Figure 1, “The rendered index page”</a> shows the final result.
+<p>完成したブログは<a href="#figure/1">Figure 1, “The rendered index page”</a> のように表示されます。
 
 <div class="figure" id="figure/1">
 
@@ -266,3 +310,4 @@ send(template(templates.index.row, {
 </div>
 
 <p>This is our final list of blog posts. That wasn’t too hard, was it? We now have the front page of the blog, we know how to query single documents as well as views, and we know how to pass arguments to views.
+<p>それほど難しくはなかったと思いますが、いかがでしたか？ここまでの内容で、ブログのフロントページを構築し、viewへ引数を渡すことでドキュメントの集合に対して問い合わせをする方法を理解することができたはずです。今度はブログに寄せられたコメントをどのように処理するかを解説していけたらと思います。

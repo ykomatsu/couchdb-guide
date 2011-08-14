@@ -11,59 +11,81 @@
 <script src="../../../script.js"></script>
 
 <h2 id="scaling">Scaling Basics</h2>
+<h2 id="scaling">スケーリングの基本</h2>
 
 <p>Scaling is an overloaded term. Finding a discrete definition is tricky. Everyone and her grandmother have their own idea of what scaling means. Most definitions are valid, but they can be contradicting. To make things even worse, there are a lot of misconceptions about scaling. To really define it, one needs a scalpel to find out the important bits.
+<p>「スケーリング」は、使い古された用語です。独立した定義はどうしてもトリッキーなものになってしまいます。人によって、スケーリングの意味は随分変わります（おばあちゃんだって）。そのほとんどは間違ってはいないのですが、それぞれが矛盾する場合もあります。さらに困ったことに、スケーリングについて誤解している人も多いです。スケーリングとは何かを理解するためには、核心に至るためのメスが必要です。
 
 <p>First, scaling doesn’t refer to a specific technique or technology; scaling, or <em>scalability</em>, is an attribute of a specific architecture. What is being <em>scaled</em> varies for nearly every project.
+<p>まず、「スケーリング」とは、ある特定のテクニックや技術を表すものではなく、「スケーリング」「スケーラブル」とはただのアーキテクチャの特徴に過ぎません。何がスケールするかは、プロジェクトによってまちまちです。
 
 <blockquote>
 
 <p>Scaling is specialization.
+<p>スケールさせるとは、何かに特化するということだ。
 
 <p class="attribution">&mdash;Joe Stump, Lead Architect of Digg.com and SimpleGeo.com
 
 </blockquote>
 
 <p>Joe’s quote is the one that we find to be the most accurate description of scaling. It is also wishy-washy, but that is the nature of scaling. An example: a website like Facebook.com— with a whole lot of users and data associated with those users and with more and more users coming in every day—might want to scale over user data that typically lives in a database. In contrast, Flickr.com at its core is like Facebook with users and data for users, but in Flickr’s case, the data that grows fastest is images uploaded by users. These images do not necessarily live in a database, so scaling image storage is Flickr’s path to growth.
+<p>この引用は、スケーリングについてのほぼ全てを表しています。なんとも薄いですが、これがスケーリングというものです。例えば、facebook.comのように多くのユーザデータ、ユーザ関連データあって、日夜ユーザが増加しているようなサイトでは、データベースにあるユーザデータについて、システムをスケールさせたいと思っていることでしょう。対照的に、flickr.comは、Facebookのようなユーザデータもありますが、この場合はデータはユーザのアップロードに伴って増加します。これらの画像データは必ずしもデータベースにあるわけではありませんが、画像データのストレージをスケールさせるのがflickrの発展の近道でしょう。
 
 <div class="aside note">
 
 <p>It is common to think of scaling as <em>scaling out</em>. This is shortsighted. Scaling can also mean <em>scaling in</em>—that is, being able to use fewer computers when demand declines. More on that later.
+<p>スケーリングはスケールアウトと混同されがちですが、これは少し安直です。スケーリングには、スケールインの含まれます - つまり、ニーズが下がるに従ってシステムを縮小させることもスケーリングのうちです。後でまたこの話をします。
 
 </div>
 
 <p>These are just two services. There are a lot more, and every one has different things they want to scale. CouchDB is a database; we are not going to cover every aspect of scaling any system. We concentrate on the bits that are interesting to you, the CouchDB user. We have identified three general properties that you can scale with CouchDB:
+<p>これらは、ふたつのサービスに過ぎません。彼らがスケールさせたいものは他にも沢山あります。CouchDB はデータベースですので、全てのシステムのあらゆる側面をカバーしようとしているわけではありません。CouchDBユーザのあなたが興味を持っていることにだけ注目します。ここでは、CouchDBであなたがスケールさせることができる、最も一般的な３個の特性を示します。
 
 <ul>
 
 <li>Read requests</li>
+<li>読み込み性能</li>
 
 <li>Write requests</li>
+<li>書き込み性能</li>
 
 <li>Data</li>
+<li>データ</li>
 
 </ul>
 
 <h3 id="reads">Scaling Read Requests</h3>
+<h3 id="reads">読み込み性能をスケールさせる</h3>
 
 <p>A read request retrieves a piece of information from the database. It passes the following stations within CouchDB. First, the HTTP server module needs to accept the request. For that, it opens a socket to send data over. The next station is the HTTP request handle module that analyzes the request and directs it to the appropriate submodule in CouchDB. For single documents, the request then gets passed to the database module where the data for the document is looked up on the filesystem and returned all the way up again.
+<p>読み込み要求は、データベースからのデータ断片の要約です。CouchDBの内部で、次のような駅を通過します：HTTPサーバモジュールが、要求を accept します。つまりデータを送信するためのソケットを確保します。次の駅はHTTPリクエストを処理するモジュールで、リクエストを解析してCouchDB内の適切なサブモジュールにデータを渡します。単一ドキュメントの場合は、リクエストはデータベースモジュールに渡されて、ファイルシステムに対してドキュメントのデータ検索を行い、もと来た道をまた帰っていきます。
 
 <p>All this takes processing time and enough sockets (or file descriptors) must be available. The storage backend of the server must be able to fulfill all read requests. There are a few more things that can limit a system to accept more read requests; the basic point here is that a single server can process only so many concurrent requests. If your applications generate more requests, you need to set up a second server that your application can read from.
+<p>これは結構時間のかかる処理なので、十分なソケットが利用可能でなければなりません。サーバのストレージは全ての読み込み要求を処理できなければなりません。他にも、いくつか阻害要因はありますが、基本的にはひとつのサーバで多くの読み込み要求を処理したい場合には、それらの要求がコンカレントなものでなければなりません。もしも、あなたのアプリケーションがさらに多くのリクエストを出してくるようであれば、読み込み用に二台目のサーバを用意するべきです。
 
 <p>The nice thing about read requests is that they can be cached. Often-used items can be held in memory and can be returned at a much higher level than the one that is your bottleneck. Requests that can use this cache don’t ever hit your database and are thus virtually toll-free. <a href="balancing.html">Chapter 18, Load Balancing</a> explains this scenario.
+<p>読み込み要求だけなら、キャッシュを使うのがイケてるでしょう。よく使われるデータはメモリ上に保持して、ボトルネックがある場合よりもずっと速く返すことができるでしょう。キャッシュを読むリクエストは絶対にデータベースを更新してはいけませんが、これ以外に制約はありません。ロードバランシングの章でこのシナリオについて詳しく説明します。
 
 <h3 id="writes">Scaling Write Requests</h3>
+<h3 id="writes">書き込み性能をスケールさせる</h3>
 
 <p>A write request is like a read request, only a little worse. It not only reads a piece of data from disk, it writes it back after modifying it. Remember, the nice thing about reads is that they’re cacheable. Writes: not so much. A cache must be notified when a write changes data, or clients must be told to not use the cache. If you have multiple servers for scaling reads, a write must occur on all servers. In any case, you need to work harder with a write. <a href="clustering.html">Chapter 19, Clustering</a> covers methods for scaling write requests across servers.
+<p>書き込み要求は読み込み要求の場合と比べて、少し大変なだけでそう変わりません。書き込みでは、ディスクからデータ断片を読み出すだけでなく、データを変更した後にディスクに書き戻します。読み込みはキャッシュで済ませることができましたが、書き込みはそうはいきません。書き込みによってデータが変更されたり、クライアントがキャッシュを禁止したら、キャッシュは更新されなければなりません。読み込み性能をスケールさせるために複数サーバを使っている場合、書き込みは全サーバに対して発生してしまいます。どんな場合であれ、書き込みは読み込みよりも大変です。クラスタリングの章では、複数サーバ間での書き込み性能をスケールさせるための方法を示します。
 
 <h3 id="data">Scaling Data</h3>
+<h3 id="data">データ量をスケールさせる</h3>
 
 <p>The third way of scaling is scaling data. Today’s hard drives are cheap and have a lot of capacity, and they will only get better in the future, but there is only so much data a single server can make sensible use of. It must maintain one more indexes to the data that uses disk space again. Creating backups will take longer and other maintenance tasks become a pain.
+<p>スケーリングの三番目のパターンは、データ量です。今日ではハードディスクは安価で大容量、しかも増える一方。とはいえ、一台のサーバに格納できる量は限られているし、他にも、データとしては重複しているインデックスデータも入れなければなりません。バックアップを作るのにもより長い時間がかかりますし、他のメンテナンス作業も苦痛になります。
 
 <p>The solution is to chop the data into manageable chunks and put each chunk on a separate server. All servers with a chunk now form a <em>cluster</em> that holds all your data. <a href="clustering.html">Chapter 19, Clustering</a> takes a look at creating and using these clusters.
+<p>そこで、管理可能なチャンクにデータを分割して、チャンクを別々のサーバに置きます。チャンクを持った全てのサーバがクラスタを構成し、あなたのデータ全てを管理します。クラスタリングの章では、クラスタの作成と使用について概説します。
 
 <p>While we are taking separate looks at scaling of reads, writes, and data, these rarely occur isolated. Decisions to scale one will affect the others. We will describe individual as well as combined solutions in the following chapters.
+<p>読み込み性能、書き込み性能、データ量について個々に見てきましたが、これらは簡単に分離できるものではありません。どれかをスケールさせれば、他のどれかに影響します。最初に個々に説明しますが、後の章でそれらを組み合わせた場合について説明します。
 
 <h3 id="basics">Basics First</h3>
+<h3 id="basics">最初は基本から</h3>
 
 <p>Replication is the basis for all of the three scaling methods. Before we go scaling, <a href="replication.html">Chapter 16, Replication</a> will familiarize you with CouchDB’s excellent replication feature.
+<p>レプリケーションがこれらの三通りのスケーリング手法の基本になります。スケーリングの話に進む前に、レプリケーションの章で、CouchDBの素敵なレプリケーション特性について詳しくなっておくべきです。

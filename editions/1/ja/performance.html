@@ -11,78 +11,131 @@
 <script src="../../../script.js"></script>
 
 <h2 id="performance">High Performance</h2>
+<h2 id="performance">ハイパフォーマンス</h2>
 
 <p>This chapter will teach you the fastest ways to insert and query data with CouchDB. It will also explain why there is a wide range of performance across various techniques.
+<p>この章では、CouchDBに対してデータを挿入、あるいは問い合わせるための最も高速な手段を教えましょう。また、様々なテクニックによって、なぜパフォーマンスが大きく変化するのかについても説明しましょう。
 
 <p>The take-home message: bulk operations result in lower overhead, higher throughput, and more space efficiency. If you can’t work in bulk in your application, we’ll also describe other options to get throughput and space benefits. Finally, we describe interfacing directly with CouchDB from Erlang, which can be a useful technique if you want to integrate CouchDB storage with a server for non-HTTP protocols, like SMTP (email) or XMPP (chat).
+<p>覚えてほしいこと: バルク操作は、より少ないオーバーヘッドで、高いスループットとよりよいメモリの使用効率の良い操作になります。バルクオペレーションがあなたのアプリケーションで使えない場合のために、他の方法でスループットを高め、メモリ効率をよくする方法を示します。最後に、Erlangから直接CouchDBを操作する方法を示します。これは、SMTP(email)やXMPP(chat)等のHTTPではないプロトコルを使用するサーバーとCouchDBを統合したい場合に役に立つテクニックになるはずです。
 
 <h3 id="benchmarks">Good Benchmarks Are Non-Trivial</h3>
+<h3 id="benchmarks">よいベンチマークが重要</h3>
 
 <p>Each application is different. Performance requirements are not always obvious. Different use cases need to tune different parameters. A classic trade-off is latency versus throughput. Concurrency is another factor. Many database platforms behave very differently with 100 clients than they do with 1,000 or more concurrent clients. Some data profiles require serialized operations, which increase total time (latency) for the client, and load on the server. We think simpler data and access patterns can make a big difference in the cacheability and scalability of your app, but we’ll get to that later.
+<p>アプリケーションはそれぞれ異なります。パフォーマンスの要求はいつも明らかであるとは限りません。異なるユースケースによって異なるパラメーターチューニングが必要になります。昔からあるトレードオフというのは、レイテンシーとスループットの対立です。同時平行性というのはもう一つの要因でしょう。多くのデータベースプラットフォームは、同時クライアント数が100の場合と1000、あるいはそれ以上の場合とで、全く異なる動作をします。いくつかのデータは、直列化のオペレーションを必要とし、合計時間(レイテンシ)とサーバーの負荷を増加させるでしょう。より単純なデータとアクセスパターンによって、アプリケーションのキャッシュの可能性とスケーラビリティの面で大きな際をもたらすと考えられますが、それについては後でやりましょう。
 
 <p>The upshot: <em>real benchmarks require real-world load.</em> Simulating load is hard. Erlang tends to perform better under load (especially on multiple cores), so we’ve often seen test rigs that can’t drive CouchDB hard enough to see where it falls over.
+<p>要旨: リアルなベンチマークに現実世界での負荷が必要です。負荷をシミュレートするのは大変です。Erlangは(特にマルチコアでの)負荷環境において、より良いパフォーマンスを出す傾向にあるため、よく見るテストはCouchDBを落とせるほどのものではありません。
 
 <p>Let’s take a look at what a typical web app looks like. This is not exactly how Craigslist works (because we don’t know how Craigslist works), but it is a close enough approximation to illustrate problems with benchmarking.
+<p>典型的なWebアプリケーションがどんなものか観てみましょう。これは、厳密にCraigslist [#]_ の動作を表しているわけではありません(なぜならCraiglistの動作を私は知りません)が、ベンチマークに関する問題を示すには十分に近いものです。
 
 <p>You have a web server, some middleware, and a database. A user request comes in, and the web server takes care of the networking and parses the HTTP request. The request gets handed to the middleware layer, which figures out what to run, then it runs whatever is needed to serve the request. The middleware might talk to your database and other external resources like files or remote web services. The request bounces back to the web server, which sends out any resulting HTML. The HTML includes references to other resources living on your web server (like CSS, JS, or image files), and the process starts anew for every resource. A little different each time, but in general, all requests are similar. And along the way there are caches to store intermediate results to avoid expensive recomputation.
+<p>Webサーバーといくつかのミドルウェア、そして一つのデータベースがあるでしょう。ユーザーからリクエストがくると、Webサーバーは、ネットワークの処理して、HTTPリクエストをパースします。リクエストはミドルウェアの層に渡され、何を動かすのかを決めます。そして、リクエストの処理に必要なものをすべて動かします。ミドルウェアはデータベース、あるいはファイルやリモートWebサービスなどの外部リソースと会話するかもしれません。リクエストはWebサーバーに戻され、任意の結果のHTMLを送信します。HTMLはCSSやJavaScript、画像などサーバー上の別のリソースへの参照を含んでおり、それぞれのリソース毎に新たにプロセスが開始されます。毎回、多少は異なりますが、一般的に、全てのリクエストは似ています。そして、高価な再計算を回避し、中間結果を保存するためのキャッシュが途中にあるでしょう。
+
 
 <p>That’s a lot of moving parts. Getting a top-to-bottom profile of all components to figure out where bottlenecks lie is pretty complex (but nice to have). We start making up numbers now. The absolute values are not important; only numbers relative to each other are. Say a request takes 1.5 seconds (1,500 ms) to be fully rendered in a browser.
+<p>多くの稼働部分があります。ボトルネックがどこにあるのか、すべてのコンポーネントの先頭から末尾へのプロファイルを取得することは非常に複雑です(しかし可能ならやるべきでしょう)。いくつかの数値を紹介しましょう。ただし、絶対値は重要ではありません。相対値が重要です。1つのリクエストの結果がブラウザに表示されるまでに1.5秒(1500ミリ秒)かかる場合を考えます。
 
 <p>In a simple case like Craigslist, there is the initial HTML, a CSS file, a JS file, and the favicon. Except for the HTML, these are all static resources and involve reading some data from a disk (or from memory) and serving it to the browser that then renders it. The most notable things to do for performance are keeping data small (GZIP compression, high JPG compression) and avoiding requests all together (HTTP-level caching in the browser). Making the web server any faster doesn’t buy us much (yeah, hand wavey, but we don’t want to focus on static resources here). Let’s say all static resources take 500 ms to serve and render.
+<p>Craigslistのような単純なケースでは、最初にHTMLがあり、さらにCSS、JavaScriptファイル、そしてfaviconファイルがあります。HTML以外は静的なリソースであり、ディスク(またはメモリ)kあらデータを読み込むことになります。リソースはブラウザに送信されると描画されます。ここでパフォーマンスのために最も注意すべき事としては、データを小さく保つこと(gzip圧縮や高圧縮jpgの使用)、全てのリクエストをさせない(HTTPレベルでブラウザにキャッシュさせる)ことです。Webサーバーを早くしたからといって十分ではありません(もちろんよいことですが、ここでは静的なリソースに注目したくはないのです)。ピートはコーヒーがほしいのです。すべての静的なリソースは500ミリ秒で処理できるとしましょう。
 
 <div class="aside note">
 
 <p>Read all about improving client experience with proper use of HTTP from Steve Souders, web performance guru. His YSlow tool is indispensable for tuning a website.
+<p>クライアントに正しくHTTPを使わせてるようにするには Steve Sounders の執筆を読んでください。YSlowツールはWebサイトのチューニングに必須のツールです。
+
 
 </div>
 
 <p>That leaves us with 1,000 ms for the initial HTML. We’ll chop off 200 ms for network latency (see <a href="why.html">Chapter 1, Why CouchDB?</a>). Let’s pretend HTTP parsing, middleware routing and execution, and database access share equally the rest of the time, 200 ms each.
+<p>この前提により、我々は最初のHTMLの処理に1000ミリ秒使えることになります。200ミリ秒はネットワーク遅延で消費されるでしょう(Network Fallaciesを参照[#]_)。HTTPのパース、ミドルウェアによるルーティングと実行、そしてデータベースアクセスをそれぞれ残りの時間、200ミリ秒ごとに行いましょう。
+
 
 <p>If you now set out to improve one part of the big puzzle that is your web app and gain 10 ms in the database access time, this is probably time not well spent (unless you have the numbers to prove it).
+<p>大きなパズルであるあなたのWebアプリケーションの一部を向上させ、データベースアクセスを10ミリ秒にしようとした場合、(証明する必要がない限り)、これにはおそらくそんなに時間がかからないでしょう。
 
 <p>However, breaking down a single request like this and looking for how much time is spent in each component is also misleading. Even if only a small percentage of the time is spent in your database under normal load, that doesn’t teach you what will happen during traffic spikes. If all requests are hitting the same database, then any locking there could block many web requests. Your database may have minimal impact on total query time, under normal load, but under spike load it may turn into a bottleneck, magnifying the effect of the spike on the application servers. CouchDB can minimize this by dedicating an Erlang process to each connection, ensuring that all clients are handled, even if latency goes up a bit.
+<p>しかし、このように単一のリクエストをブレイクダウンしていき、それぞれのコンポーネントでどれぐらい時間が消費されているのか調べていく、というのは誤りです。通常の負荷では、データベースでの時間の消費割合は少ないでしょうが、それは、トラフィックが急増したときに何が起こるのかを教えてくれるわけではありません。もし、すべてのリクエストが同じデータベースにアクセスをする場合、ロックが多くのWebのリクエストをブロックするでしょう。通常の負荷の時に、データベースは全体のクエリ時間に対してわずかなインパクトしか与えないかもしれませんが、負荷が急増したときには今度はボトルネックになってアプリケーションサーバーに大きな影響を及ぼしかねません。CouchDBでは、レイテンシが多少犠牲になろうとも、このような影響が最小限になるように、それぞれのリクエストに対してErlangのプロセスを一つずつ割り当て、全てのクライアントが処理されることを保証します。
+
 
 <h3 id="high">High Performance CouchDB</h3>
+<h3 id="high">ハイパフォーマンスCouchDB</h3>
 
 <p>Now that you see database performance is only a small part of overall web performance, we’ll give you some tips to squeeze the most out of CouchDB.
+<p>データベースのパフォーマンスは、全てのWebのパフォーマンスの内のわずかな部分であることは分かったので、CouchDBを最大限生かすためのいくつかのコツを教えましょう。
+
 
 <p>CouchDB is designed from the ground up to service highly concurrent use cases, which make up the majority of web application load. However, sometimes we need to import a large batch of data into CouchDB or initiate transforms across an entire database. Or maybe we’re building a custom Erlang application that needs to link into CouchDB at a lower level than HTTP.
+<p>CouchDBは徹底的に、Webアプリケーションの負荷問題の大部分となる高い並列負荷に答えられるように設計されています。しかし、時には大きなバッチデータをCouchDBにインポートする、あるいはデータベース全体にわたってデータ変換を行う必要がでてくる場合があります。あるいは、HTTPよりも低いレイヤーでCouchDBとリンクするerlangのカスタムアプリケーションを作るかもしれません。
+
 
 <h4 id="hardware">Hardware</h4>
+<h4 id="hardware">ハードウェア</h4>
 
 <p>Invariably people will want to know what type of disk they should use, how much RAM, what sort of CPU, etc. The real answer is that CouchDB is flexible enough to run on everything from a smart phone to a cluster, so the answers will vary.
+<p>人々は、いつもどのタイプのディスクを使うべきか、どれぐらいのRAMを使えばよいのか、どんなCPUを使うべきかを知りたがるでしょう。本当のことをいうならば、CouchDBは、スマートフォンからクラスタ環境のいずれでも動作するほど柔軟のため、答えはいくつもあります。
+
 
 <p>More RAM is better because CouchDB makes heavy use of the filesystem cache. CPU cores are more important for building views than serving documents. Solid State Drives (SSDs) are pretty sweet because they can append to a file while loading old blocks, with a minimum of overhead. As they get faster and cheaper, they’ll be really handy for CouchDB.
+<p>RAMは多いほどいいでしょう。そうすれば、CouchDBはファイルシステムのキャッシュとして使い込むことができます。
+
 
 <h4 id="implementation">An Implementation Note</h4>
+<h4 id="implementation">実装上の注意</h4>
 
 <p>We’re not going to rehash append-only B-trees here, but understanding CouchDB’s data format is key to gaining an intuition about which strategies yield the best performance. Each time an update is made, CouchDB loads from disk the B-tree nodes that point to the updated documents or the key range where a new document’s <code>_id</code> would be found.
+<p>ここでは、追加のみのB木について再び議論するつもりはありませんが、CouchDBのデータフォーマットを理解していることは、どの戦略によって最適なパフォーマンスがでるのかを直感的に理解するためのキーとなります。更新が行われる都度、CouchDBはディスクから、B木のノードを読み込みます。それらのノードは更新されるドキュメント、あるいは新しいドキュメントの_idが格納されるキーの範囲を示しています。
+
 
 <p>This loading will normally come from the filesystem cache, except when updates are made to documents in regions of the tree that have not been touched in a long time. In those cases, the disk has to seek, which can block writing and have other ripple effects. Preventing these disk seeks is the name of the game in CouchDB performance.
+<p>これらの読み込みは、通常ファイルシステムのキャッシュから行われます。長時間参照されなかった木の部分に対して更新が行われるときはその限りではありません。この場合、ディスクはシークする必要が発生し、ブロックへの書き込みが可能になります。そして、他の部分にいくつかの影響を及ぼします。このようなディスクのシークを防ぐことはCouchDBのパフォーマンス上最も重要なことです。
+
 
 <p>We’ll use some numbers in this chapter that come from a JavaScript test suite. It’s not the most accurate, but the strategy it uses (counting the number of documents that can be saved in 10 seconds) makes up for the JavaScript overhead. The hardware the benchmarks were run on is modest: just an old white MacBook Intel Core 2 Duo (remember those?).
+<p>この章でいくつかの数値を紹介しますが、それらはJavaScriptのテストスイートの結果です。多くの場合に当てはまる数値ではないですが、そのテストの手法(10秒間に保存可能なドキュメントの数を数える)によってJavaScriptのオーバーヘッドは無視できます。ベンチマークに使用したハードウェアはわずかです。Intel Core 2 Duo の白のMacbookです。
+
 
 <p>You can run the benchmarks yourself by changing to the <code>bench/</code> directory of CouchDB’s trunk and running <code>./runner.sh</code> while CouchDB is running on port 5984.
+<p>CouchDBのtrunkのbenchディレクトリを書き換え、runner.shを実行することで、ベンチマークを自分自身で実施できます。この際、CouchDBは5984ポートで動作している必要があります。
+
 
 <h3 id="bulk">Bulk Inserts and Mostly Monotonic DocIDs</h3>
+<h3 id="bulk">バルク挿入と主単調なドキュメントID</h3>
 
 <p>Bulk inserts are the best way to have seekless writes. Random IDs force seeking after the file is bigger than can be cached. Random IDs also make for a bigger file because in a large database you’ll rarely have multiple documents in one B-tree leaf.
+<p>バルク挿入はディスクのシークなしに書き込みを行うことができる最も有効な方法です。 ランダムなIDを使用するとキャッシュ可能なサイズよりも大きなファイルをシークしてしまいます。さらに、大きなデータベースではB木の一つの葉に複数のドキュメントを持つことが稀になるため、ファイルのサイズがより大きくなってしまいます。
 
 <h4 id="examples">Optimized Examples: Views and Replication</h4>
+<h4 id="examples">ビューとレプリケーションの利用</h4>
 
 <p>If you’re curious what a good performance profile is for CouchDB, look at how views and replication are done. Triggered replication applies updates to the database in large batches to minimize disk chatter. Currently the 0.11.0 development trunk boasts an additional 3–5x speed increase over 0.10’s view generation.
+<p>CouchDBに対して良いパフォーマンス結果とは何なのか、ということに興味があるのであれば、ビューやレプリケーションがどのように実行されるのかを見ておく必要があります。レプリケーションが起動されると、極力少ないディスクアクセスで巨大なバッチ処理を行ってデータベースの更新を行います。現在、バージョン0.11.0の開発が行われていますが、このバージョンでは、バージョン0.10のビューの生成に対して3〜5倍の速度向上が達成されています。
+
 
 <p>Views load a batch of updates from disk, pass them through the view engine, and then write the view rows out. Each batch is a few hundred documents, so the writer can take advantage of the bulk efficiencies we see in the next section.
+<p>ビューでは、更新部分をディスクから一括単位で読み込み、ビューのエンジンにそれらを渡します。そして、ビューの結果となる行を書き出すのです。それぞれの読み込み単位は数百ドキュメントになりますから、次に示すバルク処理の方が効率よく結果を生成することができるのです。
+
 
 <h3 id="inserts">Bulk Document Inserts</h3>
+<h3 id="inserts">バルク処理によるドキュメントの挿入</h3>
 
 <p>The fastest mode for importing data into CouchDB via HTTP is the <code>_bulk_docs</code> endpoint. The bulk documents API accepts a collection of documents in a single <code>POST</code> request and stores them all to CouchDB in a single index operation.
+<p>HTTP経由で最も高速なデータのインポート方法は _bulk_docs エンドポイントを使う方法です。_bulk_docs は一つのPOSTリクエストでドキュメントの集合を受け取り、一つのインデックス化操作でCouchDBに保存します。
+
 
 <p>Bulk docs is the API to use when you are importing a corpus of data using a scripting language. It can be 10 to 100 times faster than individual bulk updates and is just as easy to work with from most languages.
+<p>_bulk_docs APIは、スクリプト言語を使ってコーパスデータを処理するときに使うAPIです。個々のバルク更新よりも10から100倍高速に処理することができ、多くの言語で同じように簡単に利用することができます。
+
 
 <p>The main factor that influences performance of bulk operations is the size of the update, both in terms of total data transferred as well as the number of documents included in an update.
+<p>バルク操作のパフォーマンスに影響を与える主な要素は、更新のサイズ、つまり、転送されるデータのサイズと一回の操作に含まれるドキュメントの数です。
+
 
 <p>Here are sequential bulk document inserts at four different granularities, from an array of 100 documents, up through 1,000, 5,000, and 10,000:
+<p>以下は、4つの異なる粒度で連続的してバルク挿入したときの結果です。それぞれ、100個、1000個、5000個、そして10000個単位でドキュメントを挿入しています。
+
 
 <pre>
 bulk_doc_100
@@ -109,22 +162,35 @@ bulk_doc_10000
 </pre>
 
 <p>You can see that larger batches yield better performance, with an upper limit in this test of 2,700 documents/second. With larger documents, we might see that smaller batches are more useful. For references, all the documents look like this: <code>{"foo":"bar"}</code>
+<p>大きなバッチサイズがよりよいパフォーマンスを出しており、このテストでは ドキュメントの更新の上限が、毎秒2700個であることがわかるでしょう。より大きなサイズのドキュメントに対しては、1回のバッチサイズを小さくすることでより良い結果が得られるでしょう。参考までに、このテストでは、全てのドキュメントは、{"foo":"bar"} という形式です。
+
 
 <p>Although 2,700 documents per second is fine, we want more power! Next up, we’ll explore running bulk documents in parallel.
+<p>毎秒2700個というのはよい結果ですが、もっとパワーがほしいです! 次に_bulk_docs API平行処理する方法を考えましょう。
+
 
 <p>With a different script (using bash and <em>cURL</em> with <code>benchbulk.sh</code> in the same directory), we’re inserting large batches of documents in parallel to CouchDB. With batches of 1,000 docs, 10 at any given time, averaged over 10 rounds, I see about 3,650 documents per second on a MacBook Pro. Benchbulk also uses sequential IDs.
 
 <p>We see that with proper use of bulk documents and sequential IDs, we can insert more than 3,000 docs per second just using scripting languages.
 
 <h3 id="batch">Batch Mode</h3>
+<h3 id="batch">バッチモード</h3>
 
 <p>To avoid the indexing and disk sync overhead associated with individual document writes, there is an option that allows CouchDB to build up batches of documents in memory, flushing them to disk when a certain threshold has been reached or when triggered by the user. The batch option does not give the same data integrity guarantees that normal updates provide, so it should only be used when the potential loss of recent updates is acceptable.
+<p>個々のドキュメントの書き込みに対する、ディスクとの同期やインデックス処理によるオーバーヘッドを回避するためのオプションがあります。このオプションを使用すると、CouchDBは、メモリ上でバッチ処理を行い、ある閾値に達した場合や、ユーザーに指示されるた場合にディスクにフラッシュする動作となります。このbatchオプションでは、通常の更新処理で保証されるデータの整合性は保証されませんので、直近の更新が失われる可能性てもよい場合に限り使われるべきです。
+
 
 <p>Because batch mode only stores updates in memory until a flush occurs, updates that are saved to CouchDB directly proceeding a crash can be lost. By default, CouchDB flushes the in-memory updates once per second, so in the worst case, data loss is still minimal. To reflect the reduced integrity guarantees when <code>batch=ok</code> is used, the HTTP response code is 202 Accepted, as opposed to 201 Created.
+<p>バッチモードはフラッシュが発生するまで更新をメモリに保持するだけなので、更新がCouchDBに保存されてすぐにクラッシュしてしまった場合、その更新は失われる可能性があります。デフォルトではCouchDBは毎秒フラッシュ処理を行うため、最悪の場合でもデータのロスは最小限で済みます。batch=okを使用すると、整合性の保証レベルが下がりますが、このときHTTPのレスポンスコードは201 Createdではなく、202 Acceptedになります。
+
 
 <p>The ideal use for batch mode is for logging type applications, where you have many distributed writers each storing discrete events to CouchDB. In a normal logging scenario, losing a few updates on rare occasions is worth the trade-off for increased storage throughput.
+<p>バッチモードの想定としては、ログの記録を行うようなアプリケーションで、多数の書き込みクライアントが散らばっていて、それぞれが個別にCouchDBにイベントを飛ばすようなケースです。通常のログの記録シナリオでは、稀にいくつかのログが失われてしまうことについては、ストレージのスループット向上に対するトレードオフと見なすことができるでしょう。
+
 
 <p>There is a pattern for reliable storage using batch mode. It’s the same pattern as is used when data needs to be stored reliably to multiple nodes before acknowledging success to the saving client. In a nutshell, the application server (or remote client) saves to Couch A using <code>batch=ok</code>, and then watches update notifications from Couch B, only considering the save successful when Couch B’s <code>_changes</code> stream includes the relevant update. We covered this pattern in detail in <a href="replication.html">Chapter 16, Replication</a>.
+<p>バッチモードを使う場合にストレージの信頼性を高めるあるパターンがあります。それは、成功応答をクライアントに返す前に複数のノードにデータを保存して信頼性を高める必要があるときに使われるパターンと同じです。簡単に説明します。アプリケーションサーバー(あるいはリモートクライアント)は、CouchDB(A)に対してbatch=okオプションをつけて保存を行います。そしてCouchDB(B)からの更新通知を監視します。こうすれば、CouchDB(B)の_changesストリームに(Aに投入したデータの)更新が見つかったときに限り、データの保存は成功したと見なすことができます。このパターンの詳細はレプリケーションの章でカバーしています。
+
 
 <pre>
 batch_ok_doc_insert
@@ -133,14 +199,23 @@ batch_ok_doc_insert
 </pre>
 
 <p>This JavaScript benchmark only gets around 500 documents per second, six times slower than the bulk document API. However, it has the advantage that clients don’t need to build up bulk batches.
+<p>このJavaScriptのベンチマークはたったの毎秒500個です。_bulk_docs APIを使った場合の6倍も遅いです。しかし、クライアント側ではバルクバッチ用のドキュメントを作らなくて良いという利点があります。
+
 
 <h3 id="single">Single Document Inserts</h3>
+<h3 id="single">単一のドキュメント挿入</h3>
 
 <p>Normal web app load for CouchDB comes in the form of single document inserts. Because each insert comes from a distinct client, and has the overhead of an entire HTTP request and response, it generally has the lowest throughput for writes.
+<p>CouchDBに対する通常のWebアプリケーションの負荷というのは、単一のドキュメントを挿入するときの負荷です。それぞれの挿入処理は、１つの独立したクライアントからきて、HTTPのリクエストからレスポンスまでの全てがオーバーヘッドとなるため、一般的に、書き込み時のスループットが最も低くなります。
+
 
 <p>Probably the slowest possible use case for CouchDB is the case of a writer that has to make many serialized writes against the database. Imagine a case where each write depends on the result of the previous write so that only one writer can run. This sounds like a bad case from the description alone. If you find yourself in this position, there are probably other problems to address as well.
+<p>おそらく、CouchDBの考えられる最も低速なユースケースというのは、1つの書き込み処理が多くのシリアライズされた更新をデータベースに書き込むときになります。それぞれの書き込みが前の書き込みの結果を使う場合を考えると、それは単一の書き込み処理しか実行できないことになるでしょう。この説明だけみれば、悪いケースに聞こえるでしょう。こうなってしまう場合は、他にも問題があるのです。
+
 
 <p>We can write about 258 documents per second with a single writer in serial (pretty much the worst-case scenario writer).
+<p>単一の書き込み処理を連続的に行った場合は、最悪のケースで毎秒約258個のドキュメントを書き込めました。
+
 
 <pre>
 single_doc_insert
@@ -149,10 +224,16 @@ single_doc_insert
 </pre>
 
 <p>Delayed commit (along with sequential UUIDs) is probably the most important CouchDB configuration setting for performance. When it is set to true (the default), CouchDB allows operations to be run against the disk without an explicit fsync after each operation. Fsync operations take time (the disk may have to seek, on some platforms the hard disk cache buffer is flushed, etc.), so requiring an fsync for each update deeply limits CouchDB’s performance for non-bulk writers.
+<p>(連続のUUIDを使う)遅延コミットはCouchDBのパフォーマンスにとって最も重要な設定でしょう。遅延コミットがtrueに設定されているとき(デフォルトの設定)は、CouchDBは明示的なfsyncをせずにディスクに対する操作を続けて実行していきます。fsyncの操作は(ディスクのシークを行ったり、いくつかのプラットフォームではディスクキャッシュをフラッシュしたりするため)時間がかかってしまうため、毎回の更新処理にfsyncを要求することは、バルク操作ではない書き込み処理の場合のパフォーマンスに非常に大きな制約となります。
+
 
 <p>Delayed commit should be left set to <code>true</code> in the configuration settings, unless you are in an environment where you absolutely need to know when updates have been received (such as when CouchDB is running as part of a larger transaction). It is also possible to trigger an fsync (e.g., after a few operations) using the <code>_ensure_full_commit</code> API.
+<p>いつ更新を受け取ったのかを確実に知る必要がある環境(例えば、CouchDBを巨大なトランザクションの一部として動作させるような場合)以外では、遅延コミットはtrueのままにしておくべきです。あるいは、_ensure_full_commit APIを使用することで、(例えばいくつかの操作の後で)fsyncを起動させることも可能です。
+
 
 <p>When delayed commit is disabled, CouchDB writes data to the actual disk before it responds to the client (except in <code>batch=ok</code> mode). It’s a simpler code path, so it has less overhead when running at high throughput levels. However, for individual clients, it can seem slow. Here’s the same benchmark in full commit mode:
+<p>遅延コミットが無効にされた場合は、(batch=okが指定されていなければ)クライアントに応答を返す前に確実にデータをディスクに書き込みます。このときは、実行するコードがより単純なパスになるので、高スループットの環境で動かす際には少ないオーバーヘッドとなります。しかし、各クライアントにとっては、遅くなっているように見えてしまいます。フルコミットモードのベンチマークは以下の通りです。
+
 
 <pre>
 single_doc_insert
@@ -161,18 +242,29 @@ single_doc_insert
 </pre>
 
 <p>Look at how slow <code>single_doc_insert</code> is with full-commit enabled—four or five documents per second! That’s 100% a result of the fact that Mac OS X has a real fsync, so be thankful! Don’t worry; the full commit story gets better as we move into bulk operations.
+<p>フルコミットが有効になるとsingle_doc_insertがどれほど遅くなるかを確認してください。毎秒4,5個の書き込みしかできません!これはOS Xが正しいfsyncの実装をしているというm間違いない事実を表しています。感謝しましょう!でも大丈夫、フルコミットのストーリーは、バルク処理をするときによくなります。
+
 
 <p>On the other hand, we’re getting better times for large bulks with delayed commit off, which lets us know that <em>tuning for your application</em> will always bring better results than following a cookbook.
+<p>では遅延コミットを無効にして大きなバルク操作をしてみましょう。これでアプリケーションのチューニングによって以下のクックブックよりも常によい結果が得られることが分かるでしょう。
+
 
 <h3 id="hovercraft">Hovercraft</h3>
 
 <p>Hovercraft is a library for accessing CouchDB from within Erlang. Hovercraft benchmarks should show the fastest possible performance of CouchDB’s disk and index subsystems, as it avoids all HTTP connection and JSON conversion overhead.
+<p>HovercraftはErlang内からCouchDBにアクセスするのライブラリです。Hovercraftによるベンチマークは、CouchDBのディスクとインデックスのサブシステムに対して、HTTPコネクションとJSON変換のオーバーヘッドがないため、考えら得る最も高速なパフォーマンスとなります。
+
 
 <p>Hovercraft is useful primarily when the HTTP interface doesn’t allow for enough control, or is otherwise redundant. For instance, persisting Jabber instant messages to CouchDB might use ejabberd and Hovercraft. The easiest way to create a failure-tolerant message queue is probably a combination of RabbitMQ and Hovercraft.
+<p>Hovercraftは主にHTTPインターフェースで十分にコントロールできない、あるいは冗長であるときに有効です。
+
 
 <p>Hovercraft was extracted from a client project that used CouchDB to store massive amounts of email as document attachments. HTTP doesn’t have an easy mechanism to allow a combination of bulk updates with binary attachments, so we used Hovercraft to connect an Erlang SMTP server directly to CouchDB, to stream attachments directly to disk while maintaining the efficiency of bulk index updates.
+<p>Hovercraftは膨大な量の電子メールをドキュメントの添付ファイルとしてCouchDBに保存するクライアントプロジェクトから切り出したものです。HTTPではバルク更新とバイナリの添付を組み合わせることは簡単ではありません。したがって、Hovercraftを使って、SMTPサーバーとCouchDBを直接連結させました。そして、バルク操作によって効率的にインデックスの更新を行っている最中に添付ファイルをストリームでディスクに転送しました。
+
 
 <p>Hovercraft includes a basic benchmarking feature, and we see that we can get many documents per second.
+<p>Hovercraftは基本的なベンチマーク用のフィーチャーを持っています。これを使えば、毎秒大量のドキュメントを操作できていることがわかるでしょう。
 
 <pre>
 &gt; hovercraft:lightning().
@@ -183,8 +275,12 @@ Inserted 100000 docs in 9.37 seconds with batch size of 1000.
 <h3 id="trades">Trade-Offs</h3>
 
 <p>Tool X might give you 5 ms response times, an order of magnitude faster than anything else on the market. Programming is all about trade-offs, and everybody is bound by the same laws.
+<p>あるツールXが5ミリ秒のレスポンスタイムで、他の何よりも早いものだったとしましょう。プログラミングとはすべてトレードオフ次第がですが、皆同じです。
+
 
 <p>On the outside, it might appear that everybody who is not using Tool X is a fool. But speed and latency are only part of the picture. We already established that going from 5 ms to 50 ms might not even be noticeable by anyone using your product. Speed may come at the expense of other things, such as:
+<p>外からみれば、ツールXを使わない人は能なしのようにみえるかもしれません。しかし、スピードとレイテンシーだけを考えればよいのではありません。5ミリ秒が50ミリ秒になってしまったとしても、それはあるプロジェクトによっては大したことではない場合もあることをすでに分かっています。スピードに対して支払ったコストは様々なものになるでしょう。
+
 
 <dl>
 
@@ -192,30 +288,52 @@ Inserted 100000 docs in 9.37 seconds with batch size of 1000.
 
 <dd>Instead of doing computations over and over, Tool X might have a cute caching layer that saves recomputation by storing results in memory. If you are CPU bound, that might be good; if you are memory bound, it might not. A trade-off.</dd>
 
+<dt>メモリ</dt>
+<dd>ツールXは、何度も計算を行う代わりに、計算結果をメモリに保存する気の利いたキャッシュレイヤーをもっているかもしれません。CPUバウンドな処理の場合はこれはよいでしょうが、メモリバウンドな場合はそうではありません。一つのトレードオフです。</dd>
+
 <dt>Concurrency</dt>
 
 <dd>The clever data structures in Tool X are extremely fast when only one request at a time is processed, and because it is so fast most of the time, it appears as if it would process multiple requests in parallel. Eventually, though, a high number of concurrent requests fill up the request queue and response time suffers. A variation on this is that Tool X might work exceptionally well on a single CPU or core, but not on many, leaving your beefy servers idling.</dd>
+
+<dt>並列性</dt>
+<dd>ツールXのデータストラクチャーは優秀で、一時点に１つのリクエストのみを処理する場合に非常に速いものだったとします。そして、殆どの場合の処理が速いため複数のリクエストの場合にも平行処理をしているように見えるかもしれません。しかし、結局は、多くの並列リクエストがキューを埋め尽くしレスポンス時間が長くなっていきます。このように変化するのは、ツールXがシングルCPUまたはコアの上ではたまたまうまく動作し、多くのCPUまたはコアでは、サーバーをアイドリング状態にしたまま、動作しないからかもしれません。</dd>
 
 <dt>Reliability</dt>
 
 <dd>Making sure data is actually stored is an expensive operation. Making sure a data store is in a consistent state and not corrupted is another. There are two trade-offs here. First, buffers store data in memory before committing it to disk to ensure a higher data throughput. In the event of a power loss or crash (of hard- or software), the data is gone. This may or may not be acceptable for your application. Second, a consistency check is required to run after a failure, and if you have a lot of data, this can take days. If you can afford to be offline, that’s OK, but maybe you can’t afford it.</dd>
 
+<dt>信頼性</dt>
+
+<dd>データを確実に保存できるようにするという操作は高価です。また、データストアの整合性を保った状態で競合しないようにするというのも高価です。ここには2つのトレードオフがあります。一つは、より高いスループットを保証するために、ディスクにコミットされる前のデータをメモリに保持するバッファを用意することです。電源が切れたり、(ハード的にあるいはソフト的に)クラッシュしたりすることで、データは失われてしまいます。これはアプリケーションとして許容できる場合と許容できない場合があるでしょう。もう一つは、障害の後で整合性のチェックを行わせるようにすることです。多くのデータがある場合、非常に多くの日数がかかるでしょう。オフラインになることを許容できるのであればこれはよいでしょうが、そんなことは許されないでしょう。</dd>
+
 </dl>
 
 <p>Make sure to understand what requirements you have and pick the tool that complies instead of picking the one that has the prettiest numbers. Who’s the fool when your web application is offline for a fixup for a day while your customers impatiently wait to get their jobs done or, worse, you lose their data?
+<p>最も良い結果を持っているツールを使うというのではなく、あなたの要求が何なのかということを確実に理解し、その要求に従うツールを使ってください。Webアプリケーションが、修正するのに1日オフラインにする必要があり、顧客が仕事をするのにいらいらしながら待たされるのだというのであれば、なんてばかげたことでしょう。そしてもっとひどいのは、データがなくなってしまうことです。
+
 
 <h4 id="numbers">But…My Boss Wants Numbers!</h4>
+<h4 id="numbers">でも...うちのボスは結果をほしいというんだ！</h4>
 
 <p>You want to know which one of these databases, caches, programming languages, language constructs, or tools is faster, harder, or stronger. Numbers are cool—you can draw pretty graphs that management types can compare and make decisions from.
+<p>あなたは、データベースやキャッシュ、プログラミング言語、開発環境やツールのそれぞれについて、どれがより速くて堅固で強力かを知りたいんですね。
 
 <p>But the first thing a good executive knows is that she is operating on insufficient data, as diagrams drawn from numbers are a very distilled view of reality. And graphs from numbers that are made up by bad profiling are effectively fantasies.
+<p>よい重役が最初に知るのは、(あなたには分からないかもしれませんが、皆がいつも仕事をしている、ということはおいといて) 自分が処理しているデータは十分なものではないということで、図表は現実を要約したものだということです。悪い分析によって効率的に作成されたグラフはおとぎ話よりも価値のないものです。
 
 <p>If you are going to produce numbers, make sure you understand how much information is and isn’t covered by your results. Before passing the numbers on, make sure the receiving person knows it too. Again, the best thing to do is test with something as close to real-world load as possible. And that isn’t easy.
+<p>もしあなたが結果を作成しようとするのであれば、あなたの結果によってどれぐらいがカバーされるか、あるいはカバーされないかをきちんと理解してください。結果を回覧する前に、受け取る人がちゃんと情報を持っていることを確認してください。最も良い方法は、可能な限り現実世界の負荷に近づけてテストを行うことです。これは簡単ではありません。
 
 <h4 id="arms">A Call to Arms</h4>
+<h4 id="arms">みんな集まれ</h4>
 
 <p>We’re in the market for databases and key/value stores. Every solution has a sweet spot in terms of data, hardware, setup, and operation, and there are enough permutations that you can pick the one that is closest to your problem. But how to find out? Ideally, you download and install all possible candidates, create a profiling test suite with proper testing data, make extensive tests, and compare the results. This can easily take weeks, and you might not have that much time.
+<p>私たちはデータベースとキーバリューストアの市場にいます。それぞれのソリューションはデータやハードウェア、セットアップや、操作についてスイートスポットを持っています。そして、多くのパターンがあるため、あなた課題に最も近いものを採用することができる。でもどうやって見つけるのですか？理想をいえば、可能性のある全ての候補について、ダウンロードとインストールを行い、正しいデータでプロファイリング用のテストスイートを作り、広範囲のテストを行って結果を比較することです。これではすぐに数週間かかってしまい、あなたにはそんな時間はないでしょう。
+
 
 <p>We would like to ask developers of storage systems to compile a set of profiling suites that simulate different usage patterns of their systems (read-heavy and write-heavy loads, fault tolerance, distributed operation, and many more). A fault-tolerance suite should include the steps necessary to get data live again, such as any rebuild or checkup time. We would like users of these systems to help their developers find out how to reliably measure different scenarios.
+<p>私たちはストレージシステムの開発者に、彼らのシステムの様々な利用パターン(読み込み負荷、書き込み負荷、フォールトトレランス、分散処理、その他多くのパターン)をシミュレートするプロファイルスイートを作ってもらいたいです。フォールトトレランスのテストでは、復旧時間や照合検査時間のように、データの再び利用可能になるまでのステップを含んでいるべきでしょう。そしてシステムの利用者は、開発者が様々なシナリオを確実に測定できるように支援してもらいたいです。
+
 
 <p>We are working on CouchDB, and we’d like very much to have such a suite! Even better, developers could agree (a far-fetched idea, to be sure) on a set of benchmarks that objectively measure performance for easy comparison. We know this is a lot of work and the results may still be questionable, but it’ll help our users a great deal when figuring out what to use.
+<p>私たちはCouchDBの作業をしていますが、このようなスイートがほしいのです!

@@ -11,52 +11,74 @@
 <script src="../../../script.js"></script>
 
 <h2 id="security">Security</h2>
+<h2 id="security">セキュリティ</h2>
 
 <p>We mentioned earlier that CouchDB is still in development and that features may have been added since the publication of this book. This is especially true for the security mechanisms in CouchDB. There is rudimentary support in the currently released versions (0.10.0), but as we’re writing these lines, additions are being discussed.
+<p>以前の章で、CouchDBはまだ開発フェーズにあり、この本の出版以降にいくつかの機能が付け加わるかもしれないことを既に述べました。この点は、特にCouchDBのセキュリティ機構については確実なことです。現在のリリース(0.10.0)には初歩的なセキュリティ機能のサポートがありますが、私たちがこれを書いている間にも、追加機能について議論がなされています。
 
 <p>In this chapter, we’ll look at the basic security mechanisms in CouchDB: the <em>Admin Party</em>, <em>Basic Authentication</em>, <em>Cookie Authentication</em>, and <em>OAuth</em>.
+<p>この章ではCouchDBの基本的なセキュリティ機構をみてみましょう。基本的な機構とは、管理ユーザー、基本認証、クッキー認証およびOAuthです。
 
 <h3 id="party">The Admin Party</h3>
+<h3 id="party">管理パーティ</h3>
 
 <p>When you start out fresh, CouchDB allows any request to be made by anyone. Create a database? No problem, here you go. Delete some documents? Same deal. CouchDB calls this the <em>Admin Party</em>. Everybody has privileges to do anything. Neat.
+<p>まっさらな状態からCouchDBを起動すると、COuchDBは全てのユーザーからのあらゆるリクエストを許可します。データベースを作成する？ 問題ありません、どうぞ。ドキュメントを削除するのも同じです。 CouchDBはこれらの操作を管理パーティと呼んでいます。全ての人は、何でも行うことのできる権限を持っています。いいですね。
 
 <p>While it is incredibly easy to get started with CouchDB that way, it should be obvious that putting a default installation into the wild is adventurous. Any rogue client could come along and delete a database.
+<p>このおかげで、CouchDBを使い始めるのは非常になっていますが、このデフォルトのインストール状態をそのままさらしておくことは冒険です。悪のクライアントがやってきて、データベースを消し去ってしまうかもしれません。
 
 <p>A note of relief: by default, CouchDB will listen only on your loopback network interface (<code>127.0.0.1</code> or <code>localhost</code>) and thus only you will be able to make requests to CouchDB, nobody else. But when you start to open up your CouchDB to the public (that is, by telling it to bind to your machine’s public IP address), you will want to think about restricting access so that the next bad guy doesn’t ruin your admin party.
+<p>注記: CouchDBはデフォルトで、ループバックネットワークインターフェース(127.0.0.1あるいはlocalhost)でリッスンするでしょう。したがって、あなた以外は誰もCouchDBに対してリクエストを行うことができません。しかし、CouchDBをパブリックにする場合(例えば、マシンのパブリックIPアドレスをCouchDBにバインドするように設定する)、アクセスを制御して、隣の悪者が管理者パーティを台無しにしないようにすることを考えたくなるでしょう。
 
 <p>In our previous discussions, w dropped some keywords about how things without the admin party work. First, there’s <em>admin</em> itself, which implies some sort of super user. Then there are <em>privileges</em>. Let’s explore these terms a little more.
+<p>上記の議論ですでに、管理者パーティがなければどうなるのか、についてのいくつかのキーワードを示しました。まず、管理者とは、その言葉の通り、ある種の管理ユーザーを表しています。そして、そこには特権がいくつかあります。これらについてもう少し見てみましょう。
 
 <p>CouchDB has the idea of an <em>admin user</em> (e.g. an administrator, a super user, or root) that is allowed to do anything to a CouchDB installation. By default, everybody is an admin. If you don’t like that, you can create specific admin users with a username and password as their credentials.
+<p>CouchDBは、 管理ユーザーという、CouchDBに対して何でも操作可能なユーザーがいる、という考えを持っています。デフォルトでは、皆すべて管理ユーザーです。もし、これが気に入らないのなら、管理ユーザーをユーザー名とパスワードの組の認証情報を用いて作成することができます。
 
 <p>CouchDB also defines a set of requests that only admin users are allowed to do. If you have defined one or more specific admin users, CouchDB will ask for identification for certain requests:
+<p>そして、CouchDBは、管理ユーザーだけが可能な処理というものを定義しています。管理ユーザーを特別に定義している場合は、CouchDBは、以下のリクエストに対して、認証情報を尋ねるでしょう。
 
 <ul>
 
 <li>Creating a database (<code>PUT /database</code>)</li>
+<li>データベースの作成 (PUT /database)</li>
 
 <li>Deleting a database (<code>DELETE /database</code>)</li>
+<li>データベースの削除 (DELETE /database)</li>
 
 <li>Creating a design document (<code>PUT /database/_design/app</code>)</li>
+<li>デザインドキュメントの作成 (PUT /database/_design/app)</li>
 
 <li>Updating a design document (<code>PUT /database/_design/app?rev=1-4E2</code>)</li>
+<li>デザインドキュメントの更新 (PUT /database/_design/app?rev=1-4E2)</li>
 
 <li>Deleting a design document (<code>DELETE /database/_design/app?rev=1-6A7</code>)</li>
+<li>デザインドキュメントの削除 (PUT /database/_design/app?rev=1-6A7)</li>
 
 <li>Triggering compaction (<code>POST /_compact</code>)</li>
+<li>コンパクションの起動 (POST /_compat)</li>
 
 <li>Reading the task status list (<code>GET /_active_tasks</code>)</li>
+<li>タスクステータスリストの取得 (GET /_active_tasks)</li>
 
 <li>Restarting the server (<code>POST /_restart</code>)</li>
+<li>サーバーの再起動 (POST /_restart)</li>
 
 <li>Reading the active configuration (<code>GET /_config</code>)</li>
+<li>現在の構成の取得 (GET /_config)</li>
 
 <li>Updating the active configuration (<code>PUT /_config</code>)</li>
+<li>現在の構成の更新 (PUT /_config)</li>
 
 </ul>
 
 <h4 id="users">Creating New Admin Users</h4>
+<h4 id="users">新しい管理ユーザーの作成</h4>
 
 <p>Let’s do another walk through the API using <code>curl</code> to see how CouchDB behaves when you add admin users.
+<p>管理ユーザーを追加するときにCouchDBがどのように動作するのか、curlを用いてAPIを叩くことで見てみましょう。
 
 <pre>
 &gt; HOST="http://127.0.0.1:5984"
@@ -65,6 +87,7 @@
 </pre>
 
 <p>When starting out fresh, we can add a database. Nothing unexpected. Now let’s create an admin user. We’ll call her <code>anna</code>, and her password is <code>secret</code>. Note the double quotes in the following code; they are needed to denote a string value for the configuration API (as we learned earlier):
+<p>まっさらな状態から始めると、データベースを追加できます。例外はありません。では、annaという管理ユーザーを追加してみましょう。彼女のパスワードはsecretです。構成APIに文字列値を渡すためにダブルクオートで囲むことに注意してください(前にやりましたよね)。
 
 <pre>
 curl -X PUT $HOST/_config/admins/anna -d '"secret"'
@@ -72,9 +95,11 @@ curl -X PUT $HOST/_config/admins/anna -d '"secret"'
 </pre>
 
 <p>As per the <code>_config</code> API’s behavior, we’re getting the previous value for the config item we just wrote. Since our admin user didn’t exist, we get an empty string.
+<p><code>_config</code> APIは、動作として、それぞれ変更前の値を返すようにできています。管理ユーザーはいなかったので空文字が返ってきています。
+
 
 <p>When we now sneak over to the CouchDB log file, we find these two entries:
-
+<p>CouchDBのログファイルを見てみると、次の２つのエントリを見つけられます。
 <pre>
 [debug] [&lt;0.43.0&gt;] saving to file '/Users/jan/Work/couchdb-git/etc/couchdb/local_dev.ini', Config: '{{"admins","anna"},"secret"}'
 
@@ -82,30 +107,43 @@ curl -X PUT $HOST/_config/admins/anna -d '"secret"'
 </pre>
 
 <p>The first is our initial request. You see that our admin user gets written to the CouchDB configuration files. We set our CouchDB log level to <code>debug</code> to see exactly what is going on. We first see the request coming in with a plain-text password and then again with a hashed password.
+<p>これが最初のリクエストです。管理ユーザーがCouchDBの構成ファイルに書かれたことがわかります。厳格に動きを追うために、CouchDBのログレベルをdebugにしています。最初のエントリでは、プレインテキストのパスワードでリクエストが到達したことがわかります。そして今度は、そのパスワードがハッシュ値に変換されています。
 
 <h4 id="hashing">Hashing Passwords</h4>
+<h4 id="hashing">パスワードのハッシュ値を計算する</h4>
 
 <p>Seeing the plain-text password is scary, isn’t it? No worries; in normal operation when the log level is not set to <code>debug</code>, the plain-text password doesn’t show up anywhere. It gets hashed right away. The hash is that big, ugly, long string that starts out with <code>-hashed-</code>. How does that work?
+<p>上述したプレインテキストのパスワードは怖いですよね？安心してください。通常のログレベルでは、debugになっていないので、プレインテキストのパスワードはどこにも現れません。すぐにハッシュ値が計算されます。ハッシュ値は非常に見難い、長い文字列で、 <code>-hashed-</code> という文字から始まっています。これはどういう仕組みでしょうか？
 
 <ol>
 
 <li>Creates a new 128-bit UUID. This is our <em>salt</em>.</li>
+<li>128ビットのUUIDを作ります。これがソルトです。</li>
 
 <li>Creates a sha1 hash of the concatenation of the bytes of the plain-text password and the salt (<code>sha1(password + salt)</code>).</li>
+<li>プレインテキストのパスワードのバイト列とソルトからSHA1のハッシュ値を計算します。(sha1(password+salt))</li>
 
 <li>Prefixes the result with <code>-hashed-</code> and appends <code>,salt</code>.</li>
+<li><code>-hashed-</code> というプレフィックスを加えて、末尾にソルトを追加します。</li>
 
 </ol>
 
 <p>To compare a plain-text password during authentication with the stored hash, the same procedure is run and the resulting hash is compared to the stored hash. The probability of two identical hashes for different passwords is too insignificant to mention (c.f. Bruce Schneier). Should the stored hash fall into the hands of an attacker, it is, by current standards, way too inconvenient (i.e., it’d take a lot of money and time) to find the plain-text password from the hash.
+<p>認証におけるプレインテキストとハッシュ値の比較をする場合、プレインテキストから同じ手順で得られたハッシュ値と保存されているハッシュ値の比較を行います。異なるパスワードの2つのハッシュ値が同じになる可能性は、わざわざ言及する必要もないでしょう(Bruce Schneier氏を参照 [#]_ )。現在の一般的な見方からすれば、保管されたハッシュ値が攻撃者の手に渡ったとしても、そこからプレインテキストのパスワードを取得することは(非常に多くのお金と時間が必要で)簡単ではありません。
 
 <p>But what’s with the <code>-hashed-</code> prefix? Well, remember how the configuration API works? When CouchDB starts up, it reads a set of <code>.ini</code> files with config settings. It loads these settings into an internal data store (not a database). The config API lets you read the current configuration as well as change it and create new entries. CouchDB is writing any changes back to the <code>.ini</code> files.
+<p>しかし、 <code>-hashed-</code> というプレフィックスは何でしょう？ 構成APIがどう動くのかを思い出してくださいよ？ CouchDBが起動すると、構成情報が書いてある一連のiniファイルを読見込みます。そして、その構成情報は、内部のデータストア(データベースではありません)に保存されます。構成APIは、現在の構成を読み込み、変更、新規作成を可能にしています。CouchDBは全ての変更をiniファイルに書き戻します。
+
 
 <p>The <code>.ini</code> files can also be edited by hand when CouchDB is not running. Instead of creating the admin user as we showed previously, you could have stopped CouchDB, opened your <code>local.ini</code>, added <code>anna = secret</code> to the <code>[admins]</code> section, and restarted CouchDB. Upon reading the new line from <code>local.ini</code>, CouchDB would run the hashing algorithm and write back the hash to <code>local.ini</code>, replacing the plain-text password. To make sure CouchDB only hashes plain-text passwords and not an existing hash a second time, it prefixes the hash with <code>-hashed-</code>, to distinguish between plain-text passwords and hashed passwords. This means your plain-text password can’t start with the characters <code>-hashed-</code>, but that’s pretty unlikely to begin with.
+<p>iniファイルはCouchDBが起動していないときでも、手で変更することができます。上で見せたような方法で管理ユーザーを作る代わりに、CouchDBを停止して、local.iniファイルを開き、 anna = secret という行を[admins]セクションに付け加えた上でCouchDBを再起動する方法でもかまいません。 CouchDBは、local.ini の新しい行を読み込むと、ハッシュ値を計算するアルゴリズムを実行し、ハッシュ値をプレインテキストの行を置き換える形でlocal.iniファイルに書き戻します。CouchDBが、プレインテキストのパスワードだけをハッシュ値を計算する対象にするように、<coe>-hashed-</code> というプレフィックスをつけてハッシュ値とプレインテキストを区別しているのです。つまり、プレインテキストのパスワードで <code>-hashed-</code> から始まる文字使うことはできません。しかし、そんな使い方はしませんね。
+
 
 <h3 id="authentication">Basic Authentication</h3>
+<h3 id="authentication">ベーシック認証</h3>
 
 <p>Now that we have defined an admin, CouchDB will not allow us to create new databases unless we give the correct admin user credentials. Let’s verify:
+<p>管理ユーザーを登録したので、管理ユーザーの正しい認証情報を渡さなければ新しくデータベースを作ることはできません。確認してみます。
 
 <pre>
 &gt; curl -X PUT $HOST/somedatabase
@@ -113,6 +151,7 @@ curl -X PUT $HOST/_config/admins/anna -d '"secret"'
 </pre>
 
 <p>That looks about right. Now we try again with the correct credentials:
+<p>これは正しいようです。今度は正しい認証情報を試してみます。
 
 <pre>
 &gt; HOST="http://anna:secret@127.0.0.1:5984"
@@ -121,14 +160,19 @@ curl -X PUT $HOST/_config/admins/anna -d '"secret"'
 </pre>
 
 <p>If you have ever accessed a website or FTP server that was password-protected, the <code>username:password@</code> URL variant should look familiar.
+<p>パスワードで保護されているWebサイトやFTPサーバーに接続したことがあれば、 <code>username:password</code> 形式のURLは見慣れているはずです。
 
 <p>If you are security conscious, the missing <code>s</code> in <code>http://</code> will make you nervous. We’re sending our password to CouchDB in plain text. This is a bad thing, right? Yes, but consider our scenario: CouchDB listens on <code>127.0.0.1</code> on a development box that we’re the sole user of. Who could possibly sniff our password?
+<p>もしあなたがセキュリティに敏感であれば、http:// に s が抜け落ちていることに不安を覚えるでしょう。CouchDB に対してプレインテキストでパスワードを送っているのです。これは悪いことでしょうか？たしかにまずいですね。しかし、シナリオを考慮してください。CouchDBは我々しかユーザーがいない、開発環境の 127.0.0.1 でリッスンしているのです。誰がパスワードを盗み取れるのですか？
 
 <p>If you are in a production environment, however, you need to reconsider. Will your CouchDB instance communicate over a public network? Even a LAN shared with other colocation customers is public. There are multiple ways to secure communication between you or your application and CouchDB that exceed the scope of this book. We suggest you read up on VPNs and setting up CouchDB behind an HTTP proxy (like Apache httpd’s mod_proxy, nginx, or varnish) that will handle SSL for you. CouchDB does not support exposing its API via SSL at the moment. It can, however, replicate with other CouchDB instances that are behind an SSL proxy.
+<p>本番環境で動かすときは、もう一度考えてみてください。CouchDBはパブリックなネットワークで通信を行いますか。LANであったとしても、他の客と共有されているものだったりしませんか。あなた(またはあなたのアプリケーション)とCouchDBの間の通信をセキュアにする方法はいくつかありますが、本書の範囲外です。VPNについて調べた上で、SSLを処理するHTTPプロキシ(Apache httpdのmod_proxyやnginx、あるいはvarnish等)をセットアップすることをおすすめします。CouchDBは現時点ではAPIを直接SSLで使うことはサポートしていません。しかし、SSLプロキシを介して、CouchDBのインスタンス同士をレプリケーションすることは可能です。
 
 <h4 id="validation">Update Validations Again</h4>
+<h4 id="validation">再び更新バリデーション機能について</h4>
 
 <p>Do you remember <a href="validation.html">Chapter 7, Validation Functions</a>? We had an update validation function that allowed us to verify that the claimed author of a document matched the authenticated username.
+<p>第7章で出てきたバリデーション機能について覚えていますか？更新時に、クライアントが名乗ったドキュメントの著者が認証済ユーザー名とマッチするかどうかを検査する更新時のバリデーション関数がありました。
 
 <pre>
 function(newDoc, oldDoc, userCtx) {
@@ -142,6 +186,8 @@ function(newDoc, oldDoc, userCtx) {
 </pre>
 
 <p>What is this <code>userCtx</code> exactly? It is an object filled with information about the current request’s authentication data. Let’s have a look at what’s in there. We’ll show you a simple trick how to introspect what’s going on in all the JavaScript you are writing.
+<p>この <code>userCtx</code> というのは正確には何なのでしょう？このオブジェクトには、現在のリクエストの認証データが含まれています。その中身を観てみましょう。あなたが書いたJavaScriptの中で何が起きているのかを調べる単純なトリックを教えましょう。
+
 
 <pre>
 &gt; curl -X PUT $HOST/somedatabase/_design/log -d '{"validate_doc_update":"function(newDoc, oldDoc, userCtx) { log(userCtx); }"}'
@@ -149,6 +195,7 @@ function(newDoc, oldDoc, userCtx) {
 </pre>
 
 <p>Let’s show the <code>validate_doc_update</code> function:
+<p><code>validate_doc_update</code> 関数を整形すると次のようになっています。
 
 <pre>
 function(newDoc, oldDoc, userCtx) {
@@ -157,6 +204,8 @@ function(newDoc, oldDoc, userCtx) {
 </pre>
 
 <p>This gets called for every future document update and does nothing but print a log entry into CouchDB’s log file. If we now create a new document:
+<p>この関数は、以後ドキュメントが更新される度に呼び出され、何もしませんが、ログエントリをCouchDBのログファイルに書き込むものです。新しいドキュメントを作ると...
+
 
 <pre>
 &gt; curl -X POST $HOST/somedatabase/ -d '{"a":1}'
@@ -164,12 +213,14 @@ function(newDoc, oldDoc, userCtx) {
 </pre>
 
 <p>we should see this in our <code>couch.log</code> file:
+<p>couch.logファイルには次の行が現れるはずです。
 
 <pre>
 [info] [&lt;0.9973.0&gt;] OS Process :: {"db": "somedatabase","name": "anna","roles":["_admin"]}
 </pre>
 
 <p>Let’s format this again:
+<p>これも整形しましょう。
 
 <pre>
 {
@@ -180,18 +231,25 @@ function(newDoc, oldDoc, userCtx) {
 </pre>
 
 <p>We see the current database, the name of the authenticated user, and an array of <code>roles</code>, with one role <code>"_admin"</code>. We can conclude that admin users in CouchDB are really just <em>regular users</em> with the <em>admin role</em> attached to them.
+<p>現在のデータベース、認証済のユーザー、そして、<code>"_admin"</code>という一つのロールがついたロールのリストがあります。CouchDBにおける管理ユーザーは単に <code>admin</code> というロールのついた普通のユーザーでしかないことがわかります。
 
 <p>By separating users and roles from each other, the authentication system allows for flexible extension. For now, we’ll just look at admin users.
+<p>ユーザーとロールはそれぞれ別々になっているため、認証システムは柔軟に拡張することができます。さしあたっては、管理ユーザーだけをみていきます。
 
 <h3 id="cookies">Cookie Authentication</h3>
+<h3 id="cookies">クッキーを使った認証</h3>
 
 <p>Basic authentication that uses plain-text passwords is nice and convenient, but not very secure if no extra measures are taken. It is also a very poor user experience. If you use basic authentication to identify admins, your application’s users need to deal with an ugly, unstylable browser modal dialog that says <em>non-professional at work</em> more than anything else.
+<p>プレインテキストのパスワードを使ったベーシック認証は良いもので便利ですが、別の対策素しなければ、あまりセキュアではありません。ベーシック認証を管理ユーザーの特定に使うならば、あなたのアプリケーションは、醜く飾り付けのできない、何よりも素人っぽいブラウザのダイアログをユーザーに使わせることになります。
 
 <p>To remedy some of these concerns, CouchDB supports <em>cookie authentication</em>. With cookie authentication your application doesn’t have to include the ugly login dialog that the users’ browsers come with. You can use a regular HTML form to submit logins to CouchDB. Upon receipt, CouchDB will generate a one-time token that the client can use in its next request to CouchDB. When CouchDB sees the token in a subsequent request, it will authenticate the user based on the token without the need to see the password again. By default, a token is valid for 10 minutes.
+<p>この点を改善するために、CouchDBはクッキーを用いる認証をサポートします。クッキー認証を使えば、ブラウザの醜いダイアログは必要ありません。いつも通りHTMLフォームを用いて認証情報をCouchDBに送信できます。CouchDBは認証情報を受け取ると、ワンタイムトークンを発行し、クライアントは次のリクエストにそのトークンを使うことができます。CouchDBは、続くリクエストでトークンを見つけると、今度はパスワードを必要とせずに、そのトークンを用いて認証を行います。デフォルトではトークンは10分間有効です。
 
 <p>To obtain the first token and thus authenticate a user for the first time, the username and password must be sent to the <code>_session</code> API. The API is smart enough to decode HTML form submissions, so you don’t have to resort to any smarts in your application.
+<p>最初にトークンを取得する、ひいては最初にユーザーを認証するためには、ユーザー名とパスワードを <code>_session</code> APIに送信しなければなりません。
 
 <p>If you are not using HTML forms to log in, you need to send an HTTP request that looks as if an HTML form generated it. Luckily, this is super simple:
+<p>ログイン処理にHTMLフォームを使っていないのであれば、HTMLフォームが生成する形式でHTTPリクエストを送る必要があります。幸運な事に、これは非常に単純です。
 
 <pre>
 &gt; HOST="http://127.0.0.1:5984"
@@ -199,6 +257,7 @@ function(newDoc, oldDoc, userCtx) {
 </pre>
 
 <p>CouchDB replies, and we’ll give you some more detail:
+<p>CouchDBは応答を返しますが、もう少し詳しくみてみましょう。
 
 <pre>
 &lt; HTTP/1.1 200 OK
@@ -210,8 +269,10 @@ function(newDoc, oldDoc, userCtx) {
 </pre>
 
 <p>A <code>200</code> response code tells us all is well, a <code>Set-Cookie</code> header includes the token we can use for the next request, and the standard JSON response tells us again that the request was successful.
+<p>200という応答コードは、万事うまくいったことを表しています。そして <code>Set-Cookie</code> ヘッダーには、次のリクエストで使うことができるトークンを含んでいます。JSONの応答も、リクエストが成功したことを表しています。
 
 <p>Now we can use this token to make another request as the same user without sending the username and password again:
+<p>これで、このトークンを使うことで、同じユーザーのリクエストをユーザー名とパスワードを使わずに作成することができます。
 
 <pre>
 &gt; curl -vX PUT $HOST/mydatabase --cookie AuthSession=YW5uYTo0QUIzOTdFQjrC4ipN-D-53hw1sJepVzcVxnriEw -H "X-CouchDB-WWW-Authenticate: Cookie" -H "Content-Type: application/x-www-form-urlencoded"
@@ -219,10 +280,12 @@ function(newDoc, oldDoc, userCtx) {
 </pre>
 
 <p>You can keep using this token for 10 minutes by default. After 10 minutes you need to authenticate your user again. The token lifetime can be configured with the <code>timeout</code> (in seconds) setting in the <code>couch_httpd_auth</code> configuration section.
+<p>このトークンはデフォルトで10分間利用可能です。10分が経過すると、もう一度ユーザーの認証を行う必要があります。トークンの有効期間は、 couch_httpd_authセクションの <code>timeout</code> 値で設定できます。単位は秒です。
 
 <div class="aside warning">
 
 <p>Please note that for cookie authentication to work, you need to enable the <code>cookie_authentication_handler</code> in your <code>local.ini</code>:
+<p>クッキー認証を利用可能にするためには、local.iniファイルのcookie_authentication_handlerを有効にする必要があることに注意してください。
 
 <pre>
 [httpd]
@@ -230,6 +293,7 @@ authentication_handlers = {couch_httpd_auth, cookie_authentication_handler}, {co
 </pre>
 
 <p>In addition, you need to define a <em>server secret</em>:
+<p>さらに、サーバーの秘密鍵を定義する必要があります。
 
 <pre>
 [couch_httpd_auth]
@@ -239,5 +303,7 @@ secret = yours3cr37pr4s3
 </div>
 
 <h3 id="network">Network Server Security</h3>
+<h3 id="network">ネットワークサーバーセキュリティ</h3>
 
 <p>CouchDB is a networked server, and there are best practices for securing these that are beyond the scope of this book. <a href="source.html">Appendix D, Installing from Source</a> includes some of those best practices. Make sure to understand the implications.
+<p>CouchDBはネットワークにつながったサーバーですが、そのサーバーをセキュアにするためのベストプラクティスは本書の範囲外です。インストールの章にいくつかのベストプラクティスを記載しています。その含意を必ず理解してください。

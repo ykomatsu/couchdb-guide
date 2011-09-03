@@ -11,34 +11,49 @@
 <script src="../../../script.js"></script>
 
 <h2 id="recipes">Recipes</h2>
+<h2 id="recipes">レシピ</h2>
 
 <p>This chapter shows some common tasks and how to solve them with CouchDB using best practices and easy-to-follow step-by-step instructions.
+<p>この章では、いくつかの共通したタスクとそれをどのようにCouchDBで解決するかをベストプラクティスと、順を追った手順での方法を紹介します。
 
 <h3 id="banking">Banking</h3>
+<h3 id="banking">銀行業務</h3>
 
 <p>Banks are serious business. They need serious databases to store serious transactions and serious account information. They can’t lose any money. Ever. They also can’t create money. A bank must be in balance. All the time.
+<p>銀行は容易ではないビジネスです。重要な口座情報を、本格的なトランザクションで処理し保管するために本格的なデータベースを必要とします。少しでも金額を失うことは許されませんし、勝手に作ることも許されません。銀行は常に調和状態でなければなりません。
 
 <p>Conventional wisdom says a database needs to support <em>transactions</em> to be taken seriously. CouchDB does not support transactions in the traditional sense (although it works transactionally), so you could conclude CouchDB is not well suited to store bank data. Besides, would you trust your money to a couch? Well, we would. This chapter explains why.
+<p>昔からの見識では、厳粛さを取るならトランザクションをサポートすることがデータベースには必要であると言われます。CouchDBは伝統的な仕組みのトランザクションをサポートしません(ですが、トランザクションぽく動きます)、よってCouchDBは銀行のデータを保管するには適していないということがいえます。couchを信じてお金を預けることができるでしょうか？ええ、できます。この章はそれがなぜかを説明します。
 
 <h4 id="erasers">Accountants Don’t Use Erasers</h4>
+<h4 id="erasers">経理部は消しゴムを使わない</h4>
 
 <p>Say you want to give $100 to your cousin Paul for the New York cheesecake he sent to you. Back in the day, you had to travel all the way to New York and hand Paul the money, or you could send it via (paper) mail. Both methods were considerably inconvenient, so people started looking for alternatives. At one point, banks offered to take care of the money and make sure it arrived at Paul’s bank safely without headaches. Of course, they’d charge for the convenience, but you’d be happy to pay a little fee if it could save a trip to New York. Behind the scenes, the bank would send somebody with your money to give it to Paul’s bank—the same procedure, but another person was dealing with the trouble. Banks could also batch money transfers; instead of sending each order on its own, they could collect all transfers to New York for a week and send them all at once. In case of any problems—say, the recipient was no longer a customer of the bank (remember, it used to take weeks to travel from one coast to the other)—the money was sent back to the originating account.
+<p>いとこのポールがあなたにニューヨークチーズケーキを送りたいといったので、$100をあげたいとします。ずっと前は、ニューヨークに行ってポールにお金を手渡しするか、手紙で送ることができました。どちらも不便なので、人々は他の方法を探し始めます。一つは、銀行が安全かつ確実に、手数料なしでポールの口座にお金を届ける方法を提供します。もちろん、便利にお金を移動できます。ニューヨークへの旅行代金を節約でき、ちょっとした手数料を払えばよいので嬉しいでしょう。この背景には、ポールの銀行口座にあなたのお金を送るために、銀行が誰かに送っています。同様な手続きで、他の誰かはトラブルを処理しています。銀行は、それぞれの取引をそれぞれ送るのではなく、一括で送ります。一週間分のニューヨークへの送信をすべて集めて一度に送ることができます。何か問題が起きたら、受領書が銀行のお客さんのもとに届くまでもなく(覚えておいてください、一つの海岸から他のところへ移動するのに数週間はかかります)。お金は元の口座に送り返されます。
 
 <p>Eventually, the modern banking system was put in place and the actual sending of money back and forth could be stopped (much to the disdain of highwaymen). Banks had money <em>on paper</em>, which they could send around without actually sending valuables. The old concept is stuck in our heads though. To send somebody money from our bank account, the bank needs to take the notes out of the account and bring them to the receiving account. But nowadays we’re used to things happen instantaneously. It takes just a few clicks to order goods from Amazon and have them placed into the mail, so why should a banking transaction take any longer?
+<p>結果的に、現代の銀行システムは実際の返金の送付や外部への送金を停止することができる機能を持っています（多くの強奪を退けられる）。銀行は<em>紙として</em>お金を持っており、それらは実際に送られること無く送金されます。古い考えは私たちの知性の中では全く堅苦しいものになるのです。自分たちの銀行口座から誰かにお金を送金するためには、銀行が口座から紙幣を取り出し、受け取り先の口座へ送る必要があります。しかし、現在では即座にここで起きているようなことをやっています。Amazonから物をたったの数回のクリックで購入し、それが郵送で送られてきます。それなのになぜ、銀行でのトランザクションはそれでもなお必要とされるのでしょうか？
 
 <p>Banks are all electronic these days (and have been for a while). When we issue a money transfer, we expect it to go through immediately, and we expect it to work in the way it worked back in the day: take money from my account, add it to Paul’s account, and if anything goes wrong, put it back in my account. While this is logically what happens, that’s not quite how it works behind the scenes, and hasn’t since way before computers were used for banking.
+<p>最近では銀行はすべて電子化されています(そしてそれはしばらくは変わらないでしょう)。すぐに送られることを望んでいる送金でも、失敗した時には、一日のうちに返金されるような動きを期待しています。自分の口座からお金を取り出し、ポールの口座に追加し、そしてもし何か良くないことが起きたら、自分の口座に戻るような動作です。これは起きたことへの論理的な理解で、裏でどのようなことが行われているのか全く分かりません。コンピュータが銀行で使われる前からもそうです。
 
 <p>When you go to your bank and ask it to send money to Paul, the accountant will <em>start a transaction</em> by noting down that you ordered the sending of the money. The transaction will include the date, amount, and recipient. Remember that banks always need to be in balance. The money taken from your account cannot vanish. The accountant will move the money into an <em>in-transit</em> account that the bank maintains for you. Your account balance at this point is an aggregation of your current balance and the transactions in the in-transit account. Now the bank checks whether Paul’s account is what you say it is and whether the money could arrive there safely. If that’s the case, the money is moved in another single transaction from the in-transit account to Paul’s account. Everything is in balance. Notice how there are multiple independent transactions, not one big transaction that combines a number of actions.
+<p>あなたが銀行へ行き、ポールにお金を送ることを伝えたとき、銀行員はあなたから送金を依頼されたことを書き留めて、トランザクションを開始します。トランザクションには、日付や金額、領収書が含まれます。銀行は常に調和を必要としていることを思い出してください。あなたの口座から取り出されたお金は消えてはいけません。銀行員はあなたの情報を管理しつつ、<em>転送中</em>口座にお金を移動させます。この時点でのあなたの口座の額は、現在の口座の金額と転送中口座のトランザクションの金額の合計です。このとき、銀行はポールの口座が存在しているかどうか、お金が安全にそこへ到着したかどうあかを確認します。もし問題なければ、別のトランザクションでお金を転送中口座からポールの口座へ移動させます。すべては調和の中にいます。多くの複数の独立したトランザクションが存在していることに注意してください、たくさんの処理をまとめた一つの大きなトランザクションがあるわけではありません。
 
 <p>Now let’s consider an error case: say Paul’s account no longer exists. The bank finds this out while performing the batch operation of all the in-transit transactions that need to be performed. A second transaction is generated that moves the money back from the in-transit account to your bank account. Note that the transaction that moved the money out of your account is <em>not</em> undone. Rather, a second transaction that does the reverse action is created.
+<p>別のエラーの場合を考えてみましょう。あなたがポールへ$100送金しようとして、十分な金額が無かったとします。これは、銀行がお金を減らすトランザクションを生成する前に、銀行員(もしくはソフトウェア)によってチェックされます。説明すると、銀行は処理が発生しなかったふりをすることはできません。それは全ての処理がログに記録されなければならないからです。返金処理のために、明確に取り消し処理が実行され、すでに存在するトランザクションを取り消したり、削除することはできません。"銀行員は消しゴムを使わない"はMicrosoftとAmazonで働いていたトランザクションシステムのシニアアーキテクトであるPat Hellandの言葉です。
 
 <p>Here’s another error case: say you don’t have sufficient funds to send $100 to Paul. This will be checked by the accountant (or software) before the bank creates any money-deducting transaction. For accountability, a bank cannot pretend an action didn’t happen; it has to record every action minutely in a log. Undoing is done explicitly by performing a reverse action, not by reverting or removing an existing transaction. “Accountants don’t use erasers” is a quote from Pat Helland, a senior architect of transactional systems who worked at Microsoft and Amazon.
+<p>別のエラーの場合を考えてみましょう。あなたがポールへ$100送金しようとして、十分な金額が無かったとします。これは、銀行がお金を減らすトランザクションを生成する前に、銀行員(もしくはソフトウェア)によってチェックされます。説明すると、銀行は処理が発生しなかったふりをすることはできません。それは全ての処理がログに記録されなければならないからです。返金処理のために、明確に取り消し処理が実行され、すでに存在するトランザクションを取り消したり、削除することはできません。"銀行員は消しゴムを使わない"はMicrosoftとAmazonで働いていたトランザクションシステムのシニアアーキテクトであるPat Hellandの言葉です。
 
 <p>To rehash, a <em>transaction</em> can succeed or fail, but nothing in between. The only operation that CouchDB guarantees to have succeed or fail is a single document write. All operations that comprise a transaction need to be combined into a single document. If business logic detects that an error occurred (e.g., not enough funds), a reverse transaction needs to be created.
+<p>繰り返すと、<em>トランザクション</em>は成功や失敗はできますがそれ以外はありません。CouchDBが成功や失敗を保証している処理は一つのドキュメントの書き込みのみです。トランザクションを含む全ての処理は一つのドキュメントに集約されている必要があります。もしビジネスロジックがエラーが発生したこと(資金が足りないなど)を検出するなら、元に戻すトランザクションが作られなければなりません。
 
 <p>Let’s look at a CouchDB example. We mentioned earlier that your account balance is an aggregated value. If we stick to this picture, things become downright easy. Instead of updating the balance of two accounts (yours and Paul’s, or yours and the in-transit account), we simply create a single transaction document that describes what we’re doing and use a view to aggregate your account balance.
+<p>CouchDBの例を見てみましょう。あなたの口座の額は値の合計であることを前で述べました。もし、私たちがこの状況を考えるなら、ことはとても単純になるでしょう。二つの口座(あなたの口座とポールの口座、または転送中口座)の額を更新するかわりに、私たちは単純に処理することを記載した一つのトランザクションドキュメントを作成し、あなたの口座の額を合計するようなビューを使います。
 
 <p>Let’s consider a bunch of transactions:
+<p>トランザクションのまとまりを考えてみましょう。
 
 <pre>
 ...
@@ -49,8 +64,10 @@
 </pre>
 
 <p>Single document writes in CouchDB are atomic. Querying a view forces an update to the view index with all changes to all documents. The view result is always consistent with the data in our documents. This guarantees that our bank is always in balance. There are many more transactions, of course, but these will do for illustration purposes.
+<p>CouchDBでの一つのドキュメントの書き込みはアトミックです。ビューを要求すると、すゔぇてのドキュメントに対して、すべての変更のビューインデックスの更新を強制的に行います。ビューの結果はドキュメントのデータと共に常に一貫性があります。これは、銀行が常に調和が取れていることを保証しています。たくさんのトランザクションがあっても、もちろん、これらは意図したとおりに動きます。
 
 <p>How do we read the current account balance? Easy—create a MapReduce view:
+<p>どのように現在の口座の金額を読めばよいでしょうか？簡単です、MapReduceビューを作ります。
 
 <pre>
 function(transaction) {
@@ -66,12 +83,14 @@ function(keys, values) {
 </pre>
 
 <p>Doesn’t look too hard, does it? We’ll store this in a view <code>balance</code> in a <code>_design/account</code> document. Let’s find out Jan’s balance:
+<p>難しくは見えないでしょう？<code>_design/account</code>ドキュメントの<code>balance</code>ビューとして保存します。Janの金額を見てみましょう。
 
 <pre>
 curl 'http://127.0.0.1:5984/bank/_design/account/_view/balance?key="Jan"'
 </pre>
 
 <p>CouchDB replies:
+<p>CouchDBは以下のように返します。
 
 <pre>
 {"rows":[
@@ -80,12 +99,14 @@ curl 'http://127.0.0.1:5984/bank/_design/account/_view/balance?key="Jan"'
 </pre>
 
 <p>Looks good! Now let’s see if our bank is actually in balance. The sum of all transactions should be zero:
+<p>良さそうです！さて、私たちの銀行が実際に調和がとれているか確認しましょう。すべてのトランザクションの合計はゼロであるべきです。
 
 <pre>
 curl http://127.0.0.1:5984/bank/_design/account/_view/balance
 </pre>
 
 <p>CouchDB replies:
+<p>CouchDBは以下のように返します。
 
 <pre>
 {"rows":[
@@ -96,20 +117,28 @@ curl http://127.0.0.1:5984/bank/_design/account/_view/balance
 <h4 id="wrap">Wrapping Up</h4>
 
 <p>This should explain that applications with strong consistency requirements can use CouchDB if it is possible to break up bigger transactions into smaller ones. A bank is a good enough approximation of a serious business, so you can be safe modeling your important business logic into small CouchDB transactions.
+<p>ここまで、大きなトランザクションをより小さなトランザクションに分解できる時、強い一貫性を必要とするアプリケーションがCouchDBを使うことができることを説明しています。銀行は重大でしっかりとしたビジネスの例としては十分でしょう。よって、重要なビジネスロジックに小さなCouchDBトランザクションを安全に利用することができると言えます。
 
 <h3 id="ordering">Ordering Lists</h3>
+<h3 id="ordering">発注リスト</h3>
 
 <p>Views let you sort things by any value of your data—even complex JSON keys are possible, as we’ve seen in earlier chapters. Sorting by date is very useful for allowing users to find things quickly; a name is much easier to find in a list of names that is sorted alphabetically. Humans naturally resort to a divide-and-conquer algorithm (sound familiar?) and don’t consider a large part of the input set because they know the name won’t show up there. Likewise, sorting by number and date helps a great deal to let users manage their ever-increasing amounts of data.
+<p>ビューはあなたのデータの何かの値で、値をソートします。前の章で見てきたように、規則的で複雑なJSONキーが利用可能です。日付でのソートは値をすぐに見つけるための方法としてとても便利ですし、名前を使えば、アルファベット順で並べられた名前のリストから見つけることも簡単になります。人は分割統治法（聞き覚えはありますか？）で自然に再並び替えします。そして、入力セットの大部分を考慮しません。なぜなら、名前がその部分に現れることは無いことを知っているからです。同じように、数字や日付で並べることは、増え続けるデータを管理する上での良い取り扱い方法の手助けになります。
 
 <p>There’s another sorting type that is a little more fuzzy. Search engines show you results in order of relevance. That relevance is what the search engine thinks is most relevant to you given your search term (and potential search and surfing history). There are other systems trying to infer from earlier data what is most relevant to you, but they have the near-to-impossible task of guessing what a user is interested in. Computers are notoriously bad at guessing.
+<p>他の並び替え方法として、もう少し曖昧なものもあります。サーチエンジンは関連のある結果を返します。この関連はサーチエンジンがあなたが検索した単語(そしてポテンシャルサーチや履歴検索など)に最も関連のありそうなものを考えた結果です。あるシステムではあなたに最も関連のありそうなデータも新しい方から提示しようとするものもあります。しかし、それらは利用者が興味を持っていることを推測するという不可能に近いことをしようとしています。コンピュータは推測することが苦手であることはよく知られています。
 
 <p>The easiest way for a computer to figure out what’s most relevant for a user is to let the user prioritize things. Take a to-do application: it allows users to reorder to-do items so they know what they need to work on next. The underlying problem—keeping a user-defined sorting order—can be found in a number of other places.
+<p>利用者にとって最も関連性があるものを提示するためにコンピュータができる最も簡単な方法は、利用者に優先順位を決めさせることです。ToDoアプリケーションを考えてみます。アプリケーションでは利用者にToDoリストの並び替えを許可しています。そのため、次に何をやる必要があるかをアプリケーションは知っています。ここでの問題(ユーザ定義の並び替え順番を保つこと)はたくさんの他のアプリケーションでも確認することができます。 
 
 <h4 id="integers">A List of Integers</h4>
+<h4 id="integers">数値のリスト</h4>
 
 <p>Let’s stick with the to-do application example. The naïve approach is pretty easy: with each to-do item we store an integer that specifies the location in a list. We use a view to get all to-do items in the right order.
+<p>ToDoアプリケーションをもう少し見てみましょう。 とても簡単な方法は、リストの保管位置を示す数字をつけてToDoリストを保管することです。正しい順番でToDoリストを取得するにはビューを使います。
 
 <p>First, we need some example documents:
+<p>まずは、いくつかのサンプルのドキュメントが必要ですね。 
 
 <pre>
 {
@@ -138,6 +167,7 @@ curl http://127.0.0.1:5984/bank/_design/account/_view/balance
 </pre>
 
 <p>Next, we create a view with a simple map function that emits rows that are then sorted by the <code>sort_order</code> field of our documents. The view’s result looks like we’d expect:
+<p>次に、ドキュメントの<code>sort_order</code>フィールドの値を使って並べられるように、行をemitする単純なmap関数をもったビューを作成します。ビューの結果は期待したようになります。 
 
 <pre>
 function(todo) {
@@ -177,20 +207,26 @@ function(todo) {
 </pre>
 
 <p>That looks reasonably easy, but can you spot the problem? Here’s a hint: what do you have to do if getting a gift for Amy becomes a higher priority than remembering the milk? Conceptually, the work required is simple:
+<p>そこそこ簡単に思えますが、どうやって問題を解決するのでしょうか？ヒントは、"もし、'Gift for Amy'を、'Remember the Milk'よりも高い優先度にしたいとき、どうしなければならないか"を考えます。概念的にはやることは簡単です。 
 
 <ol>
 
 <li>Assign “Gift for Amy” the <code>sort_order</code> of “Remember the Milk.”</li>
+<li> "Gift for Amy"に"Remember the Milk"の<code>sort_order</code>を設定します。 </li>
 
 <li>Increment the <code>sort_order</code> of “Remember the Milk” and <em>all</em> items that follow by one.</li>
+<li>"Remember the Milk"とそれよりも後の<em>すべての</em>ToDoの<code>sort_order</code>をインクリメントします。</li>
 
 </ol>
 
 <p>Under the hood, this is a lot of work. With CouchDB you’d have to load every document, increment the <code>sort_order</code>, and save it back. If you have a lot of to-do items (I do), then this is some significant work. Maybe there’s a better approach.
+<p>内部的には、たくさんのやることがあります。CouchDBで全てのドキュメント読み込まなくてはならず、<code>sort_order</code>をインクリメントし、保存して戻します。もし、大量の(やろうとしている)ToDoがある場合、いくつかの重要な動作があり、おそらくより良い方法があります。
 
 <h4 id="floats">A List of Floats</h4>
+<h4 id="floats">小数点数のリスト </h4>
 
 <p>The fix is simple: instead of using an integer to specify the sort order, we use a float:
+<p>修正は簡単です。並び順を指定する為に整数を使う代わりに 、小数点数使います。
 
 <pre>
 {
@@ -219,10 +255,13 @@ function(todo) {
 </pre>
 
 <p>The view stays the same. Reading this is as easy as the previous approach. Reordering becomes much easier now. The application frontend can keep a copy of the <code>sort_order</code> values around, so when we move an item and store the move, we not only have available the new position, but also the <code>sort_order</code> value for the two new surrounding items.
+<p>先ほどと同じビューがあるとします。読み込みは前の方法と同じように単純です。並び替えはもっと簡単になります。アプリケーションフロントエンドは<code>sort_order</code>の値のコピーを保持し続けることができます。新しい場所にするだけでなく、 二つのToDoの<code>sort_order</code>の値を変更するような、ToDoの移動や、移動を保存したりする場合にもそうです。
 
 <p>Let’s move “Gift for Amy” so it’s above “Remember the Milk.” The surrounding <code>sort_order</code>s in the target position are <code>0.1</code> and <code>0.2</code>. To store “Gift for Amy” with the correct <code>sort_order</code>, we simply use the median of the two surrounding values: <code>(0.1 + 0.2) / 2 = 0.3 / 2 = 0.15</code>.
+<p>"Gift for Amy"を"Remember the Milk"の上に移動させましょう。移動先の周りの<code>sort_order</code>は<code>0.1</code>と<code>0.2</code>です。正しい<code>sort_order</code>で"Gift for Amy"を保管するために、二つの周りの値の中間値を使います。<code>(0.1+0.2)/2=0.3/2=0.15</code>です。
 
 <p>If we query the view again, we now get the desired result:
+<p>もしビューへの再問い合わせをすると、望ましい結果を得られます。
 
 <pre>
 {
@@ -254,18 +293,25 @@ function(todo) {
 </pre>
 
 <p>The downside of this approach is that with an increasing number of reorderings, float precision can become an issue as digits “grow” infinitely. One solution is not to care and expect that a single user will not exceed any limits. Alternatively, an administrative task can reset the whole list to single decimals when a user is not active.
+<p>この方法での良くないところは、並び替えの数が増えていくと、小数点数の精度が無限に成長する数字として問題になることです。一つの解決方法は無視して、1人の利用者があらゆる限界を超えないことを期待することです。他の方法は、利用者がアクティブでなくなった時に、管理タスクがリスト全体を 一つの小数点にリセットすることです。
 
 <p>The advantage of this approach is that you have to touch only a single document, which is efficient for storing the new ordering of a list and updating the view that maintains the ordered index since only the changed document has to be incorporated into the index.
+<p>この方法の良いところは、一つのドキュメントだけに触れればよいことです。これは、新しい順番でリストを保存することや、変更のあったドキュメントがインデックスに組み込まれてからインデックスの並びを管理するためにビューをアップデートするために有効な方法です。
 
 <h3 id="pagination">Pagination</h3>
+<h3 id="pagination">ページ構成</h3>
 
 <p>This recipe explains how to paginate over view results. Pagination is a user interface (UI) pattern that allows the display of a large number of rows (the <em>result set</em>) without loading all the rows into the UI at once. A fixed-size subset, the <em>page</em>, is displayed along with <em>next</em> and <em>previous</em> links or buttons that can move the <em>viewport</em> over the result set to an adjacent page.
+<p>このレシピではどのようにビューの結果をページとして構成するかを説明します。ページ構成によりユーザインタフェースでたくさんの行(<em>結果の集まり</em>)を、一度にユーザインタフェースにすべての行を読み込むことなく表示することを可能にします。小さく分けられたサブセット(<em>ページ</em>)は、表示領域を結果の集まり上の隣りのページへ移動させるための<em>next</em>と<em>previous</em>のリンクやボタンに挟まれた形で表示されます。
 
 <p>We assume you’re familiar with creating and querying documents and views as well as the multiple view query options.
+<p>ここでは、あなたがドキュメントの作成やクエリ、複数のビュークエリオプションやビューに精通していると想定しています。
 
 <h4 id="data">Example Data</h4>
+<h4 id="data">サンプルデータ</h4>
 
 <p>To have some data to work with, we’ll create a list of bands, one document per band:
+<p>バンドのリストを作るためのいくつかのデータを、バンド毎に一つのドキュメントとして用意します。
 
 <pre>
 { "name":"Biffy Clyro" }
@@ -292,8 +338,10 @@ function(todo) {
 </pre>
 
 <h4 id="view">A View</h4>
+<h4 id="view">ビューの定義</h4>
 
 <p>We need a simple map function that gives us an alphabetical list of band names. This should be easy, but we’re adding extra smarts to filter out “The” and “A” in front of band names to put them into the right position:
+<p>バンド名のアルファベット順のリストを得るため、簡単なmap関数が必要です。これは簡単ですが、私たちは特別な機能として、バンド名の先頭の"The"と"A"を外し、バンド名を正しい順番に持ってくるようにしました。
 
 <pre>
 function(doc) {
@@ -305,8 +353,10 @@ function(doc) {
 </pre>
 
 <p>The views result is an alphabetical list of band names. Now say we want to display band names five at a time and have a link pointing to the next five names that make up one page, and a link for the previous five, if we’re not on the first page.
+<p>ビューの結果は、バンド名のアルファベット順になります。ここで、一つの画面にはバンド名を５つ表示し、もし最初の１ページ目でなければ一つのページに表示できるよう前後の５つの名前に移動するためのリンクをそれぞれ作ります。
 
 <p>We learned how to use the <code>startkey</code>, <code>limit</code>, and <code>skip</code> parameters in earlier chapters. We’ll use these again here. First, let’s have a look at the full result set:
+<p>私たちはどのように<code>startkey</code>、<code>limit</code>や<code>skip</code>パラメータを使うかを前の章で学びました。ここではそれらを使います。まず、結果の全体を見てみましょう。
 
 <pre>
 {"total_rows":11,"offset":0,"rows":[
@@ -325,24 +375,32 @@ function(doc) {
 </pre>
 
 <h4 id="setup">Setup</h4>
+<h4 id="setup">設定</h4>
 
 <p>The mechanics of paging are very simple:
+<p>ページの構成はとてもシンプルです。
 
 <ul>
 
 <li>Display first page.</li>
+<li>始めのページを表示する</li>
 
 <li>If there are more rows to show, show <em>next</em> link.</li>
+<li>もし、表示する行がまだあるなら、<em>next</em>のリンクを表示する</li>
 
 <li>Draw subsequent page</li>
+<li>ページの続きを表示する<li>
 
 <li>If this is not the first page, show a <em>previous</em> link.</li>
+<li>もし始めのページでなければ、<em>previous</em>リンクを表示する</li>
 
 <li>If there are more rows to show, show <em>next</em> link.</li>
+<li>もし、表示する行がまだあるなら、<em>next</em>のリンクを表示する</li>
 
 </ul>
 
 <p>Or in a pseudo-JavaScript snippet:
+<p>または擬似的なJavaScriptのスニペットはこうです。
 
 <pre>
 var result = new Result();
@@ -360,14 +418,17 @@ if(result.hasNext()) {
 </pre>
 
 <h4 id="slow">Slow Paging (Do Not Use)</h4>
+<h4 id="slow">ゆっくりとページを表示（利用しないで）</h4>
 
 <p>Don’t use this method! We just show it because it might seem natural to use, and you need to know why it is a bad idea. To get the first five rows from the view result, you use the <code>?limit=5</code> query parameter:
+<p>この方法は使わないでください！ここでは、使い方として自然に見えるかもしれないため、紹介しているだけで、なぜこの方法が良くないかを知って欲しいからです。ビューの結果から始めの５行を取得するために、<code>?limit=5</code>クエリパラメータを利用します。
 
 <pre>
 curl -X GET http://127.0.0.1:5984/artists/_design/artists/_view/by-name?limit=5
 </pre>
 
 <p>The result:
+<p>結果はこのようになります。
 
 <pre>
 {"total_rows":11,"offset":0,"rows":[
@@ -380,6 +441,7 @@ curl -X GET http://127.0.0.1:5984/artists/_design/artists/_view/by-name?limit=5
 </pre>
 
 <p>By comparing the <code>total_rows</code> value to our <code>limit</code> value, we can determine if there are more pages to display. We also know by the <code>offset</code> member that we are on the first page. We can calculate the value for <code>skip=</code> to get the results for the next page:
+<p><code>total_rows</code>の値と<code>limit</code>の値を比較することで、表示するベージがまだあるかを決めることが出来ます。そして、<code>offset</code>の値で、それが始めのページなのかを知ることもできます。以下のような方法で、次のページの結果を取得するための<code>skip=</code>の値を計算することができます。
 
 <pre>
 var rows_per_page = 5;
@@ -388,14 +450,17 @@ var skip = page * rows_per_page; // == 5 for the first page, 10 for the second .
 </pre>
 
 <p>So we query CouchDB with:
+<p>よってCouchDBへのクエリはこのようになります。
 
 <pre>
 curl -X GET 'http://127.0.0.1:5984/artists/_design/artists/_view/by-name?limit=5&amp;skip=5'
 </pre>
 
 <p>Note we have to use <code>'</code> (single quotes) to escape the <code>&amp;</code> character that is special to the shell we execute <code>curl</code> in.
+<p><code>curl</code>での特殊文字である<code>&amp;</code>文字をエスケープするために、<code>'</code>(シングルクオート）を使わなければならないことに注意してください。
 
 <p>The result:
+<p>結果はこうなります。
 
 <pre>
 {"total_rows":11,"offset":5,"rows":[
@@ -408,6 +473,7 @@ curl -X GET 'http://127.0.0.1:5984/artists/_design/artists/_view/by-name?limit=5
 </pre>
 
 <p>Implementing the <code>hasPrev()</code> and <code>hasNext()</code> method is pretty straightforward:
+<p><code>hasPrev()</code>と<code>hasNext()</code>メソッドを実装するのがとっても分かりやすいです。
 
 <pre>
 function hasPrev()
@@ -424,41 +490,59 @@ function hasNext()
 </pre>
 
 <h5 id="dealbreaker">The dealbreaker</h5>
+<h5 id="dealbreaker">やり取りを失敗させるもの</h5>
 
 <p>This all looks easy and straightforward, but it has one fatal flaw. Remember how view results are generated from the underlying B-tree index: CouchDB jumps to the first row (or the first row that matches <code>startkey</code>, if provided) and reads one row after the other from the index until there are no more rows (or <code>limit</code> or <code>endkey</code> match, if provided).
+<p>この方法は、単純で直感的に見えます。しかし、一つの致命的な欠陥があります。B-tree indexのもとで、どのようにビューの結果が生成されているか思い出して下さい。CouchDBは始めの行に移動します（<code>startkey</code>が提供されれば合致したところの始めの行）そして、インデックスの後ろの行から行が無くなるまで（もし提供されたなら、<code>limit</code>や<code>endkey</code>が合致したところまで）読み込みます。
 
 <p>The <code>skip</code> argument works like this: in addition to going to the first row and starting to read, <code>skip</code> will skip as many rows as specified, but CouchDB will still read from the first row; it just won’t return any values for the skipped rows. If you specify <code>skip=100</code>, CouchDB will read 100 rows and not create output for them. This doesn’t sound too bad, but it is <em>very</em> bad, when you use <code>1000</code> or even <code>10000</code> as <code>skip</code> values. CouchDB will have to look at a lot of rows unnecessarily.
+<p><code>skip</code>引数は後述のように動作します。始めの行への移動に加え、読み込みを開始します。<code>skip</code>は指定された数の行を読飛ばします。しかし、CouchDBはまだ始めの行から読み込もうとします。読飛ばされた行の値を返すことはありません。もし、<code>skip=100</code>を指定した場合、CouchDBは100行を読み込み、それらの出力をしません。これは、とても悪いようには聞こえませんが、<em>ものすごく</em>良くありません。あなたが<code>1000</code>や<code>10000</code>を<code>skip</code>の値として与えた時よくないことが起きます。CouchDBは不要に多くの行を探さなければならなくなります。
 
 <p>As a rule of thumb, <code>skip</code> should be used only with single digit values. While it’s possible that there are legitimate use cases where you specify a larger value, they are a good indicator for potential problems with your solution. Finally, for the calculations to work, you need to add a reduce function and make two calls to the view per page to get all the numbering right, and there’s still a potential for error.
+<p>大まかにいえば、<code>skip</code>は単一の数値だけで利用されるべきです。大きな値を指定するような正当なユースケースがあるなら、潜在的な問題の解決策の良い指標です。最後に、動作の計算のために、reduce関数を追加する必要があり、すべての正しい番号付けを得るため、二つのコールをページ毎のビューに作る必要があります。
 
 <h4 id="fast">Fast Paging (Do Use)</h4>
+<h4 id="fast">１ページ (使って)</h4>
 
 <p>The correct solution is not much harder. Instead of slicing the result set into equally sized pages, we look at 10 rows at a time and use <code>startkey</code> to jump to the next 10 rows. We even use <code>skip</code>, but only with the value <code>1</code>.
+<p>正しい解決方法は、すごく難しいものではありません。結果全体を同じサイズのページに分割する変わりに、一回で10行を検索し、<code>startkey</code>を次の10行を得るために使います。私たちは<code>skip</code>を使いますが、値は常に<code>1</code>です。
 
 <p>Here is how it works:
+<p>どのように動作するかを示します。
 
 <ul>
 
 <li>Request <code>rows_per_page</code> + 1 rows from the view</li>
+<li>ビューから<code>rows_per_page</code> + 1 の行数をリクエストします</li>
 
 <li>Display <code>rows_per_page</code> rows, store + 1 row as <code>next_startkey</code> and <code>next_startkey_docid</code></li>
+<li><code>rows_per_page</code>分の行を表示し、+1の行は<code>next_startkey</code>と<code>next_startkey_docid</code>として保管します</li>
 
 <li>As <em>page information</em>, keep <code>startkey</code> and <code>next_startkey</code></li>
+<li><em>ページ情報として</em><code>startkey</code>と<code>next_startkey</code>を保持します</li>
 
 <li>Use the <code>next_*</code> values to create the <em>next</em> link, and use the others to create the <em>previous</em> link</li>
+<li><code>next_*</code>の値を使い、<em>次へ</em>のリンクを作成します。そして、もう一方を使い<em>前へ</em>のリンクを作ります</li>
 
 </ul>
 
 <p>The trick to finding the next page is pretty simple. Instead of requesting 10 rows for a page, you request 11 rows, but display only 10 and use the values in the 11th row as the <code>startkey</code> for the next page. Populating the link to the previous page is as simple as carrying the current <code>startkey</code> over to the next page. If there’s no previous <code>startkey</code>, we are on the first page. We stop displaying the link to the next page if we get <code>rows_per_page</code> or less rows back. This is called <em>linked list pagination</em>, as we go from page to page, or list item to list item, instead of jumping directly to a pre-computed page. There is one caveat, though. Can you spot it?
+<p>次のページを探す種はとても簡単です。１ページ用に１０行リクエストする変わりに、１１行リクエストします。しかし、１０行だけを表示し、１１行目の値は次のページのための<code>startkey</code>として利用します。前のページへのリンクを作成するには、次のページへ行くための現在の<code>startkey</code>を持ち運ぶぐらい簡単です。もし前の<code>startkey</code>が無いなら、そこは最初のページです。もし<code>rows_per_page</code>が得られるか戻る行が無い場合は、次のページへのリンクを表示することを行いません。これは<em>Linked Listページネーション</em>と呼ばれます。ページからページへの移動やリストからリストへの移動を、事前計算したページへ直接移動する代わりに行います。ですが、覚え書きがあります。検討はつきますか？
 
 <p>CouchDB view keys do not have to be unique; you can have multiple index entries <em>read</em>. What if you have more index entries for a key than rows that should be on a page? <code>startkey</code> jumps to the first row, and you’d be screwed if CouchDB didn’t have an additional parameter for you to use. All view keys with the same value are internally sorted by <code>docid</code>, that is, the ID of the document that created that view row. You can use the <code>startkey_docid</code> and <code>endkey_docid</code> parameters to get subsets of these rows. For pagination, we still don’t need <code>endkey_docid</code>, but <code>startkey_docid</code> is very handy. In addition to <code>startkey</code> and <code>limit</code>, you also use <code>startkey_docid</code> for pagination if, and only if, the extra row you fetch to find the next page has the same key as the current <code>startkey</code>.
+<P>CuchDBのビューのキーはユニークでなくても構いません。 複数の<em>read</em>インデックスを持つこと持つことも可能です。もし今の行よりもインデックを持つなら、何をページにするべきでしょうか？<code>start key</code>は始めの行に移動します。そして、もし利用する追加のパラメータをCouchDBが持っていなければ、きっと困惑するでしょう。同じ値のキーもつビューは、<code>docid</code>で並べられます。<code>docid</code>はビューとして作られたドキュメントのIDです。得られるビューの中から、<code>startkey_docid</code>と<code>end key_docid</code<code>を使い、部分的に得ることができます。ページ構造を作るなら、まだ<code>endkey_docid</code>は必要ではありませんが、<code>startkey_docid</code>はとても有効です。<code>startkey</code>と<code>limit</code>に加えて、<code>startkey_docid</code>をページ構成に利用し、次のページを見つけるための特別な行が現在の<code>startkey</code>のような同じキーを持ちます。
 
 <p>It is important to note that the <code>*_docid</code> parameters only work <em>in addition</em> to the <code>*key</code> parameters and are only useful to further narrow down the result set of a view for a single key. They do not work on their own (the one exception being the built-in _<code>all_docs</code> view that already sorts by document ID).
+<p>重要なことは、<code>*_docid</code>パラメータは<code>*key</code>パラメータとの組み合わせでしか動作しないことと、一つのキーで取得されるビューの結果からより狭めて取得するときにのみ便利であることです。この<code>*_docid</code>パラメータだけでは動作しません(一つの例外として、_<code>all_docs</code>ビューはすでにドキュメントIDで並べられています)。
 
 <p>The advantage of this approach is that all the key operations can be performed on the super-fast B-tree index behind the view. Looking up a page doesn’t include scanning through hundreds and thousands of rows unnecessarily.
+<p>この方法の利点は、全てのキー操作がビューに対する高速なB-treeインデックス上で動作できることです。ページを見つけるために、数百、数千の行を走査することはありません。
 
 <h4 id="jump">Jump to Page</h4>
+<h4 id="jump">ページへの移動</h4>
 
 <p>One drawback of the linked list style pagination is that you can’t pre-compute the rows for a particular page from the page number and the rows per page. Jumping to a specific page doesn’t really work. Our gut reaction, if that concern is raised, is, “Not even Google is doing that!” and we tend to get away with it. Google always pretends on the first page to find 10 more pages of results. Only if you click on the second page (something very few people actually do) might Google display a reduced set of pages. If you page through the results, you get links for the previous and next 10 pages, but no more. Pre-computing the necessary <code>startkey</code> and <code>startkey_docid</code> for 20 pages is a feasible operation and a pragmatic optimization to know the rows for every page in a result set that is potentially tens of thousands of rows long, or more.
+<p>Linked Listページネーションの一つの欠点は、ページ番号やページ毎の行から特定のページの行を事前計算できないことです。指定のページへ移動することは正しく動きません。直感では、このことに直面したら、"Googleでさえそれはやってない!"、そしてそれを避けようとする傾向があります。Googleは常に一つ目のページに10以上のページ結果が見つかったようなふりをします。もしかすると２ページ目をクリック（大抵のほとんどの人が実際はするでしょう）してからGoogleはページセットを減らして表示しているかもしれません。もし結果を通じてページを移動する場合、前後10ページを表示するリンクを使います。しかし、それ以上の方法はありません。事前計算は20ページのために必要な<code>startkey</code>や<code>startkey_docid</code>が、実現可能な処理で、潜在的に数万やそれ以上の行の結果の集まりの中で、すべてのページのための行を知るためにプログラム可能な最適化方法です。
 
 <p>If you really do need to jump to a page over the full range of documents (we have seen applications that require that), you can still maintain an integer value index as the view index and take a hybrid approach at solving pagination.
+<p>もし本当にドキュメントの全範囲での直接移動が必要な場合（私たちはそのようなアプリケーションを見たことがあります）、ビューインデックスとして数値のインデックスを管理することやページネーションを解決するハイブリッドな方法を取ることができます。

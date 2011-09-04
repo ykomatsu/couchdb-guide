@@ -87,13 +87,12 @@ var l10n = {
             <a href='http://www.couchone.com/'>J. Chris Anderson</a>,\
             <a href='http://www.couchone.com/'>Jan Lehnardt</a> and\
             <a href='http://nslater.org/'>Noah Slater</a>.",
-        "home": "ホーム",
-        "nextPage": "次のページ",
-        "prevPage": "前のページ",
-        "search": "検索",
+        "home": "Home",
+        "nextPage": "Next Page",
+        "prevPage": "Previous Page",
+        "search": "Search",
         "title": "CouchDB <span>The Definitive Guide</span>",
     },
-
 
 };
 

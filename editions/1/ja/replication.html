@@ -11,10 +11,13 @@
 <script src="../../../script.js"></script>
 
 <h2 id="replication">Replication</h2>
+<h2 id="replication">レプリケーション</h2>
 
 <p>This chapter introduces CouchDB’s world-class replication system. Replication synchronizes two copies of the same database, allowing users to have low latency access data no matter where they are. These databases can live on the same server or on two different servers—CouchDB doesn’t make a distinction. If you change one copy of the database, replication will send these changes to the other copy.
+<p>この章では、CouchDBの世界クラスのレプリケーションの仕組みについて説明します。レプリケーションとは、同じデータベースのコピーを二つ同期しながら、どこにあってもユーザに低レイテンシでアクセスさせることです。データベースが一つのサーバ上にある場合も、二つの異なるサーバ上にある場合もありますが、CouchDBは特にそれらを区別しません。ひとつのデータベースのコピーが変更されたら、レプリケーションによりもう一方に変更が送られます。
 
 <p>Replication is a one-off operation: you send an HTTP request to CouchDB that includes a <em>source</em> and a <em>target</em> database, and CouchDB will send the changes from the source to the target. That is all. Granted, calling something world-class and then only needing one sentence to explain it does seem odd. But part of the reason why CouchDB’s replication is so powerful lies in its simplicity.
+<p>レプリケーションは一度限りのオペレーションです： ソースとターゲットになるデータベースを書いたHTTPリクエストをCouchDBに送ってしまえば、CouchDBは変更をソースからターゲットに送ります。それだけです。 ...あるモノを世界クラスと呼んで、たった１センテンスで世界クラスだと思わせることができるなんてそんな滑稽な話はありません。
 
 <p>Let’s see what replication looks like:
 
@@ -24,8 +27,10 @@ POST /_replicate HTTP/1.1
 </pre>
 
 <p>This call sends all the documents in the local database <code>database</code> to the remote database <code>http://example.org/database</code>. A database is considered “local” when it is on the same CouchDB instance you send the <code>POST /_replicate</code> HTTP request to. All other instances of CouchDB are “remote.”
+<p>この呼び出しは、ローカルデータベースにある全てのドキュメントをリモートのデータベース http://example.org/database へ送る、という意味です。データベースは "POST /_replicate" のHTTPリクエストを受け取ったインスタンスが、「ローカル」と見なされます。他の全てのインスタンスは「リモート」です。
 
 <p>If you want to send changes from the target to the source database, you just make the same HTTP requests, only with source and target database swapped. That is all.
+<p>ターゲットからソースのデータベースに変更を受け取りたい場合には、同じHTTPリクエストのソースとターゲットを入れ替えます。それだけです。
 
 <pre>
 POST /_replicate HTTP/1.1
@@ -33,36 +38,50 @@ POST /_replicate HTTP/1.1
 </pre>
 
 <p>A remote database is identified by the same URL you use to talk to it. CouchDB replication works over HTTP using the same mechanisms that are available to you. This example shows that replication is a <em>unidirectional</em> process. Documents are copied from one database to another and not automatically vice versa. If you want <em>bidirectional</em> replication, you need to trigger two replications with <em>source</em> and <em>target</em> swapped.
+<p>リモートのデータベースは話しかけるのに使うものと同じ URL で区別されます。CouchDBのレプリケーションはあなたが使っているのと同じ仕組みで、HTTP上で動作します。この例からレプリケーションが単方向に限定されることも分かるでしょう。ドキュメントはひとつのデータベースから他のコピーされますが、逆は自動的には行われません。双方向のレプリケーションを行いたい場合は、単方向のレプリケーションを二つ、ソースとターゲットを入れ替えたものを設定する必要があります。
 
 <h3 id="magic">The Magic</h3>
+<h3 id="magic">タネ明かし</h3>
 
 <p>When you ask CouchDB to replicate one database to another, it will go and compare the two databases to find out which documents on the source differ from the target and then submit a batch of the changed documents to the target until all changes are transferred. Changes include new documents, changed documents, and deleted documents. Documents that already exist on the target in the same revision are not transferred; only newer revisions are.
+<p>CouchDBにデータベースをレプリケーションするよう設定したとき、CouchDBは２個のデータベースを比較してソースとターゲットで異なるドキュメントがあるかどうかを確かめた後、ターゲットに全ての差分をバッチ転送します。差分には新規ドキュメント、ドキュメントの更新、ドキュメントの削除が含まれます。既存の同じリビジョンのドキュメントについては転送されません。新しいリビジョンだけが転送されます。
 
 <p>Databases in CouchDB have a <em>sequence number</em> that gets incremented every time the database is changed. CouchDB remembers what changes came with which sequence number. That way, CouchDB can answer questions like, “What changed in database A between sequence number 212 and now?” by returning a list of new and changed documents. Finding the differences between databases this way is an efficient operation. It also adds to the robustness of replication.
+<p>CouchDBのデータベースは、内容が変更される度にインクリメントされるシーケンス番号を持っており、全ての変更差分とシーケンス番号を関連付けて記憶します。そうすることで、「データベースAでシーケンス番号212から今まで何が変更された？」というような問い合わせにも、最新のものと変更されたドキュメントのリストを返して答えることができます。データベース同士の差分を検索するのも効率的になります。また、より壊れにくいレプリケーションを行うことができます。
 
 <div class="aside note">
 
 <p>CouchDB views use the same mechanism when determining when a view needs updating and which documents to replication. You can use this to build your own solutions as well.
+<p>CouchDBのビューは、ビュー更新のタイミングの判断と、レプリケーションすべきドキュメントの判断とで同じメカニズムを使っています。これを使って、同様に自分のソリューションを組み立てることができます。
 
 </div>
 
 <p>You can use replication on a single CouchDB instance to create snapshots of your databases to be able to test code changes without risking data loss or to be able to refer back to older states of your database. But replication gets really fun if you use two or more different computers, potentially geographically spread out.
+<p>単体のデータベースインスタンスでもレプリケーションは効果があります。例えば、データを失うリスクなしにテストコードを走らせたり、データベースを古い状態に簡単に戻したりするために、自分のデータベース上のスナップショットを作成するなどの用途があります。でもやっぱり、レプリケーションは複数のコンピュータ（特に地理的に分散したもの）の間でのレプリケーションが最高にクールです。
 
 <p>With different servers, potentially hundreds or thousands of miles apart, problems are bound to happen. Servers crash, network connections break off, things go wrong. When a replication process is interrupted, it leaves two replicating CouchDBs in an inconsistent state. Then, when the problems are gone and you trigger replication again, it continues where it left off.
+<p>理屈では、複数のコンピュータは数百キロだろうが数千キロだろうが離れていても大丈夫です。問題はたまに置きます TODO: be bound to - サーバはクラッシュしますし、ネットワークは途切れますし、モノは壊れようです。しかし、レプリケーション中にそれらの問題が起きても二つのCouchDBは必ず整合した状態ですし、障害が解決したらまたレプリケーションを再開すればよいのです。
 
 <h3 id="simple">Simple Replication with the Admin Interface</h3>
+<h3 id="simple">管理インターフェースを用いた簡単なレプリケーション</h3>
 
 <p>You can run replication from your web browser using Futon, CouchDB’s built-in administration interface. Start CouchDB and open your browser to <code>http://127.0.0.1:5984/_utils/</code>. On the righthand side, you will see a list of things to visit in Futon. Click on “Replication.”
+<p>Futonを使えば、ブラウザからレプリケーションを実行できます。Futonとは、CouchDBに組み込みの管理インターフェースです。CouchDBを起動してブラウザから http://127.0.0.1:5984/_utils/ を開いてみてください。画面右側にFutonで利用可能なメニューがあるので、"replication" をクリックしてください。
 
 <p>Futon will show you an interface to start replication. You can specify a source and a target by either picking a database from the list of local databases or filling in the URL of a remote database.
+<p>Futonに、レプリケーションを開始するインターフェースがあると思います。ソースとターゲットを、ローカルの場合はリストから、リモートの場合はURLからデータベース名をそれぞれ選択してください。
 
 <p>Click on the Replicate button, wait a bit, and have a look at the lower half of the screen where CouchDB gives you some statistics about the replication run or, if an error occurred, an explanatory message.
+<p>そこで "Replicate" ボタンを押せば、少し待つとスクリーンの下半分にレプリケーションに関する統計が出ます。何かエラーが起きていれば、エラーの説明が同じところに出力されます。
 
 <p>Congratulations—you ran your first replication.
+<p>おめでとう！あなたは最初のレプリケーションに成功しました。
 
 <h3 id="detail">Replication in Detail</h3>
+<h3 id="detail">レプリケーションの詳細</h3>
 
 <p>So far, we’ve skipped over the result from a replication request. Now is a good time to look at it in detail. Here’s a nicely formatted example:
+<p>さきほどのレプリケーションの結果をスキップしてしまいました。一応動いたので、これから詳細を見て行きましょう。以下は例です：
 
 <pre>
 {
@@ -88,31 +107,42 @@ POST /_replicate HTTP/1.1
 </pre>
 
 <p>The <code>"ok": true</code> part, similar to other responses, tells us everything went well. <code>source_last_seq</code> includes the source’s <code>update_seq</code> value that was considered by this replication. Each replication request is assigned a <code>session_id</code>, which is just a UUID; you can also talk about a <em>replication session</em> identified by this ID.
+<p>"ok": true は、他のレスポンスと同様に全て上手くいったことを表します。source_last_seq はこのレプリケーションで受け取ったソースの最後のシーケンス番号です。全てのレプリケーションのリクエストは、session_id と結びつけられます（ただのUUIDです）。レプリケーションのセッションはこのUUIDでも特定できます。
 
 <p>The next bit is the replication <em>history</em>. CouchDB maintains a list of history sessions for future reference. The history array is currently capped at 50 entries. Each unique replication trigger object (the JSON string that includes the source and target databases as well as potential options) gets its own history. Let’s see what a history entry is all about.
+<p>次は、レプリケーションのヒストリについてです。後々参照されることに備えて、CouchDBは過去のセッションを全て管理しています。このヒストリ一覧には今のところ50エントリまでしか入りません。個々のレプリケーションのトリガーオブジェクト（ソースとターゲットとオプションが書かれたJSON文字列）は全て独自のヒストリを持っています。ひとつのヒストリが何を意味するかを、これから見て行きましょう：
 
 <p>The <code>session_id</code> is recorded here again for convenience. The start and end time for the replication session are recorded. The <code>_last_seq</code> denotes the <code>update_seq</code>s that were valid at the beginning and the end of the session. <code>recorded_seq</code> is the <code>update_seq</code> of the target again. It’s different from <code>end_last_seq</code> if a replication process dies in the middle and is restarted. <code>missing_checked</code> is the number of docs on the target that are already there and don’t need to be replicated. <code>missing_found</code> is the number of missing documents on the source.
+<p>session_id は利便性のためにここでも記録されます。レプリケーションのセッションの開始時刻と終了時刻はstart-timeとend-timeに記録されます。_last_seqは、セッションの開始時と終了時にupdate_seqsが正しいかどうかを判定するために用意されています。レプリケーションを行うプロセスが途中で死んで再開された場合に、end_last_seqと異なる値になります。missing_checkedはターゲット上に存在していてレプリケーションする必要のないドキュメントの数です。missing_foundは、ターゲット上に存在していないドキュメントの数です。
 
 <p>The last three—<code>docs_read</code>, <code>docs_written</code>, and <code>doc_write_failures</code>—show how many documents we read from the source, wrote to the target, and how many failed. If all is well, <code>_read</code> and <code>_written</code> are identical and <code>doc_write_failures</code> is 0. If not, you know something went wrong during replication. Possible failures are a server crash on either side, a lost network connection, or a <code>validate_doc_update</code> function rejecting a document write.
+<p>最後の三個、docs_read, docs_written, doc_write_failures はそれぞれ、ソースからいくつのドキュメントが読まれたか、ターゲットに書き込まれたドキュメント数、ターゲットへの書き込みに失敗したドキュメント数を表す。もしも全て順調なら、_readと_writtenは同値で、doc_write_failureは0になるはずです。順調でないなら、レプリケーションのどこかで何かがおかしいです。あり得るのは、どちらかでサーバが故障したとか、ネットワーク接続が切れたとか、validate_doc_update関数がドキュメントへの書き込みを拒否しているか、といった辺りが考えられます。
 
 <p>One common scenario is triggering replication on nodes that have admin accounts enabled. Creating design documents is restricted to admins, and if the replication is triggered without admin credentials, writing the design documents during replication will fail and be recorded as <code>doc_write_failures</code>. If you have admins, be sure to include the credentials in the replication request:
+<p>よくあるシナリオは、管理者アカウントが有効なサーバでレプリケーションがトリガーされた場合です。admin権限がないままレプリケーションが開始され、レプリケーションによってデザインドキュメントを作成されそうになると、adminはデザインドキュメントを作れないので、レプリケーションは失敗しdoc_write_failuresが記録されます。
 
 <pre>
 &gt; curl -X POST http://127.0.0.1:5984/_replicate  -d '{"source":"http://example.org/database", "target":"http://admin:password@e127.0.0.1:5984/database"}'
 </pre>
 
 <h3 id="continuous">Continuous Replication</h3>
+<h3 id="continuous">継続的なレプリケーション</h3>
 
 <p>Now that you know how replication works under the hood, we share a neat little trick. When you add <code>"continuous":true</code> to the replication trigger object, CouchDB will not stop after replicating all missing documents from the source to the target. It will listen on CouchDB’s <code>_changes</code> API (see <a href="notifications.html">Chapter 20, Change Notifications</a>) and automatically replicate over any new docs as they come into the source to the target. In fact, they are not replicated right away; there’s a complex algorithm determining the ideal moment to replicate for maximum performance. The algorithm is complex and is fine-tuned every once in a while, and documenting it here wouldn’t make much sense.
+<p>レプリケーションが水面下でどのように動くかをあなたは理解したはずなので、ちょっとキレイではないテクニックをお教えします。もしも "continuous":true としてレプリケーションのトリガーオブジェクトを作成したとき、CouchDBはtargetに対するデータの転送を止めなくなります。これはCouchDBの _changes というAPI (Change Notificationsという章をご覧ください) を監視し、新しいドキュメントが作成されるなどしたときに自動的にレプリケーションしてくれます。もしもすぐにレプリケーションされないようなら、最高のパフォーマンスを出すための最適なタイミングを決定するための複雑なアルゴリズムが動いているのだと思われます。このアルゴリズムは複雑でよくチューニングされているのでここで説明する必要は特にありません。
 
 <pre>
 &gt; curl -X POST http://127.0.0.1:5984/_replicate -d '{"source":"db", "target":"db-replica", "continuous":true}'
 </pre>
 
 <p>At the time of writing, CouchDB doesn’t remember continuous replications over a server restart. For the time being, you are required to trigger them again when you restart CouchDB. In the future, CouchDB will allow you to define permanent continuous replications that survive a server restart without you having to do anything.
+<p>これを執筆している時点では、CouchDBはサーバ再起動すると継続的なレプリケーションの設定を忘れてしまいます。しばらくの間は再起動の度に毎回レプリケーションのトリガーオブジェクトを作成する必要があります。将来的には、CouchDBはレプリケーション設定を永続的に保持しておくことによって、再起動してもレプリケーションを継続できるようにしておきたいと思います。
 
 <h3 id="more">That’s It?</h3>
+<h3 id="more">どうよ？</h3>
 
 <p>Replication is the foundation on which the following chapters build on. Make sure you have understood this chapter. If you don’t feel comfortable yet, just read it again and play around with the replication interface in Futon.
+<p>レプリケーションはこの後の章の全ての基礎となる内容ですので、必ず理解してから次に進んでください。まだよく分からないようでしたら、もう一度読み返してからFutonでレプリケーションを一通りいじってみてください。
 
 <p>We haven’t yet told you everything about replication. The next chapters show you how to manage replication conflicts (see <a href="conflicts.html">Chapter 17, Conflict Management</a>), how to use a set of synchronized CouchDB instances for load balancing (see <a href="balancing.html">Chapter 18, Load Balancing</a>), and how to build a cluster of CouchDBs that can handle more data or write requests than a single node (see <a href="clustering.html">Chapter 19, Clustering</a>).
+<p>とはいえ、レプリケーションの全てをここに書いたわけではありません。次の章では、レプリケーションにおける衝突の問題（衝突管理の章）、同期したCouchDBインスタンスでロードバランスする方法（ロードバランシングの章）、一台でこなせるよりも多くの書き込み性能を出すためのクラスタの組み方（クラスタリングの章）、について説明します。

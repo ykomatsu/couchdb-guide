@@ -11,38 +11,56 @@
 <script src="../../../script.js"></script>
 
 <h2 id="design">Design Documents</h2>
+<h2 id="design">デザインドキュメント</h2>
 
 <p><em>Design documents</em> are a special type of CouchDB document that contains application code. Because it runs inside a database, the application API is highly structured. We’ve seen JavaScript views and other functions in the previous chapters. In this section, we’ll take a look at the function APIs, and talk about how functions in a design document are related within applications.
+<p>デザインドキュメントはアプリケーションコードを格納する特別なドキュメントです。データベース内部で動作するため、APIは構造化されています。前のチャプターで、javascriptのビューとその他の関数に触れました。この章では、アプリケーションに関連するdesign ドキュメントについて、またその関数についてみていきます。
 
 <p>This part (<a href="index.html#part/ii">Part II, “Developing with CouchDB”</a>, Chapters <a href="design.html">Chapter 5, Design Documents</a> through <a href="transforming.html">Chapter 9, Transforming Views with List Functions</a>) lays the foundation for <a href="index.html#part/iii">Part III, “Example Application”</a>, where we take what we’ve learned and build a small blog application to further develop an understanding of how CouchDB applications are built. The application is called Sofa, and on a few occasions we discuss it this part. If you are unclear on what we are referring to, do not worry, we’ll get to it in <a href="index.html#part/iii">Part III, “Example Application”</a>.
+<p>このパートはパート３のサンプルアプリケーション(couchdb アプリの構成の仕方を理解するためのブログアプリ)に基づいています。このアプリケーションはsofaと呼ばれるもので、何度かこのパートでふれることになります。もし、何のことだか分からなくても心配はいりません。パート３のサンプルアプリケーションで確認できます。
+
 
 <h3 id="modeling">Document Modeling</h3>
+<h3 id="modeling">ドキュメントモデリング</h3>
 
 <p>In our experience, there are two main kinds of documents. The first kind is like something a word processor would save, or a user profile. With that sort of data, you want to denormalize as much as you possibly can. Basically, you want to be able to load the document in one request and get something that makes sense enough to display.
+<p>我々の経験によれば、ドキュメントは２つの種類があります。一つ目は、何かのワードプロセッサーで作るものや、ユーザプロファイルのようなものです。データをソートするとき、可能な限りカスタマイズしたいでしょう。基本的に、一回のリクエストで、ドキュメントを読み込むことができ、十分に表示できるものを得られます。
 
 <p>A technique exists for creating “virtual” documents by using views to collate data together. You could use this to store each attribute of your user profiles in a different document, but I wouldn’t recommend it. Virtual documents are useful in cases where the presented view will be created by merging the work of different authors; for instance, the reference example, a blog post, and its comments in one query. A blog post titled “<a href="http://www.cmlenz.net/archives/2007/10/couchdb-joins">CouchDB Joins</a>,” by Christopher Lenz, covers this in more detail.
+<p>"仮想的な"ドキュメントを作成するためのテクニックとして、データを順に並べるためのviewsを使うことができます。これを使うことで、異なるドキュメントでのユーザプロファイルの属性をストアできますが、それは推奨される使い方ではありません。;仮想的なドキュメントは別々の作者のドキュメントを結合するために作成されるビューのときに有効です。例えば、参照サンプルや、ブログのポストやそのコメントなどです。より詳しい情報は、Chirstopher Lenzの<a href="http://www.cmlenz.net/archives/2007/10/couchdb-joins">"CouchDB Joins"</a>というブログで見ることができます。
+
 
 <p>This virtual document idea takes us to the other kind of document—the event log. Use this in cases where you don’t trust user input or where you need to trigger an asynchronous job. This records the user action as an event, so only minimal validation needs to occur at save time. It’s when you load the document for further work that you’d check for complex relational-style constraints.
+<p>仮想的なドキュメントというアイデアは、我々にイベントログといった別の種類のドキュメントをもたらします。ユーザの入力が信頼できない場合や非同期のジョブをトリガーする必要がある場合などに使えます。これはイベントとしてユーザのアクションを記録するため、保存の時に最小限の確認が生じます。さらにドキュメントをロードする時には複雑なリレーショナルスタイルの制約をチェックすることになるでしょう。
 
 <p>You can treat documents as state machines, with a combination of user input and background processing managing document state. You’d use a view by state to pull out the relevant document—changing its state would move it in the view.
+<p>ドキュメントはユーザ入力とドキュメント状態を管理するバックグラウンド処理の状態機械として扱えます。ドキュメントを引き出すための状態でビューを使うでしょう、それはビューの中でその状態が移動することを変化させます。
 
 <p>This approach is also useful for logging—combined with the <code>batch=ok</code> performance hint, CouchDB should make a fine log store, and reduce views are ideal for finding things like average response time or highly active users.
+<p>この方法はログをとるのに便利です。CouchDBが良いログストアとなる<code>batch=ok</code>のパフォーマンスヒントと合わせて、平均的なレスポンスタイムもしくはとてもアクティブなユーザのようなことを見つけるのに適しているでしょう。
 
 <h3 id="server">The Query Server</h3>
 
 <p>CouchDB’s default query server (the software package that executes design document functions) is written in JavaScript, but there are views servers available for nearly any language you can imagine. Implementing a new language is a matter of handling a few JSON commands from a simple line-based program.
+<p>CouchDBのデフォルトのQuery server （デザインドキュメントの関数を実行するソフトウェアパッケージ）はJavaScriptで記述されています。しかし、あなたがイメージする何かの言語に近いものを有効にするview サーバーもあります。新しい言語の導入は単純なコマンドラインからJSONコマンドを扱う一つの方法です。
 
 <p>In this section, we’ll review existing functionality like MapReduce views, update validation functions, and show and list transforms. We’ll also briefly describe capabilities available on CouchDB’s roadmap, like replication filters, update handlers for parsing non-JSON input, and a rewrite handler for making application URLs more palatable. Since CouchDB is an open source project, we can’t really say when each planned feature will become available, but it’s our hope that everything described here is available by the time you read this. We’ll make it clear in the text when we’re talking about things that aren’t yet in the CouchDB trunk.
+<p>このセクションでは、MapReduceビューやアップデート検証関数, show, list変換のような存在する関数についてレビューします。私たちはまた、CouchDBのロードマップにあるレプリケーションフィルターや、non-JSONの入力への対応、より細かくアプリケーションURLを作るためのrewriteハンドラによるCouchDBの能力を明確に述べます。CouchDBがオープンソースプロジェクトになって以来、予定されている機能がいつ使えるようになるのか明確に言うことができませんが、あなたがここで読むすべてのことが私たちの望んでいることです。私たちがCouchDBのtrunkリポジトリにまだ存在しないことについて話し、文字として明確にします。
 
 <h3 id="documents">Applications Are Documents</h3>
+<h3 id="documents">ドキュメントの集まりであるアプリケーション</h3>
 
 <p>CouchDB is designed to work best when there is a one-to-one correspondence between applications and design documents.
+<p>CouchDBはアプリケーションとデザインドキュメントが一対一のような場合に良く動くように出来ています。
 
 <p>A <em>design document</em> is a CouchDB document with an <code>id</code> that begins with <code>_design/</code>. For instance, the example blog application, Sofa, is stored in a design document with the ID <code>_design/sofa</code> (see <a href="#figure/1">Figure 1, “Anatomy of our design document”</a>). Design documents are just like any other CouchDB document—they replicate along with the other documents in their database and track edit conflicts with the <code>rev</code> parameter.
+<p><em>design document</em>は<code>id</code>が<code>_design</code>から始まるドキュメントです。例えば、ブログアプリケーションのSofaでは<code>_design/sofa</code>というIDでデザインドキュメントが保存されています。 (see <a href="#figure/1">Figure 1, “Anatomy of our design document”</a>) デザインドキュメントは他のCouchDBドキュメントと同じです。データベース内の他のドキュメントと一緒にレプリカされたり、<code>rev</code>パラメータで編集の競合を追跡します。
 
 <p>As we’ve seen, design documents are normal JSON documents, denoted by the fact that their DocID is prefixed with <code>_design/</code>.
+<p>ここまで見てきたように、デザインドキュメントは普通のJSONドキュメントで、DocIDが<code>_design/</code>で始まることで決定されています。
 
 <p>CouchDB looks for views and other application functions here. The static HTML pages of our application are served as attachments to the design document. Views and validations, however, aren’t stored as attachments; rather, they are directly included in the design document’s JSON body.
+<p>CouchDBはviewと他のアプリケーション機能をここで探します。アプリケーション内の静的なHTMLはデザインドキュメントの添付として提供されます。しかし、viewと認証系は添付としては保管されず、直接デザインドキュメントの内容として組み込まれます。
 
 <div class="figure" id="figure/1">
 
@@ -53,12 +71,16 @@
 </div>
 
 <p>CouchDB’s MapReduce queries are stored in the <code>views</code> field. This is how Futon displays and allows you to edit MapReduce queries. View indexes are stored on a per–design document basis, according to a fingerprint of the function’s text contents. This means that if you edit attachments, validations, or any other non-view (or language) fields on the design document, the views will not be regenerated. However, if you change a map or a reduce function, the view index will be deleted and a new index built for the new view functions.
+<p>CouchDBのMapReduceクエリは、viewに保管されます。これはFutonがどのように表示やMapReduceクエリを編集可能にするかを表しています。viewインデックスは、関数のテキスト内容の署名に従い、基本的にデザインドキュメント毎に保管されます。これはデザインドキュメントの添付ファイルや認証、他のviewや言語ではないフィールドを編集しても、viewが再作成されないことを意味しています。しかし、もしmapやreduceの内容を変更した場合は、viewインデックスは削除され、新しいviewのためにインデックスが再作成されます。
 
 <p>CouchDB has the capability to render responses in formats other than raw JSON. The design doc fields <code>show</code> and <code>list</code> contain functions used to transform raw JSON into HTML, XML, or other Content-Types. This allows CouchDB to serve Atom feeds without any additional middleware. The <code>show</code> and <code>list</code> functions are a little like “actions” in traditional web frameworks—they run some code based on a request and render a response. However, they differ from actions in that they may not have side effects. This means that they are largely restricted to handling <code>GET</code> requests, but it also means they can be cached by HTTP proxies like Varnish.
+<p>CouchDBはそのままのJSON以外のフォーマットでのレスポンスを戻す機能も持っています。デザインドキュメントフィールドのshowやlistはJSONをHTMLやXML, 他のContent-Typeへ変換するのに使われます。これにより、CouchDBに新たなミドルウェアを追加することなく、Atomフィードを提供する仕組みを持たせることができます。<code>show</code>や<code>list</code>はリクエストとレスポンスの描画に基づいてコードを実行する古典的なwebのフレームワークの"actions"のようなものです。しかし、"actions"とは違い、副作用を起こしません。これは<code>GET</code>リクエストを扱うことに強く制限されていることを意味しています。しかし、これはまた、VarnishなどのHTTPプロキシによってキャッシュすることができることも意味しています。
 
 <p>Because application logic is contained in a single document, code upgrades can be accomplished with CouchDB replication. This also opens the possibility for a single database to host multiple applications. The interface a newspaper editor needs is vastly different from what a reader desires, although the data is largely the same. They can both be hosted by the same database, in different design documents.
+<p>アプリケーションロジックは一つのドキュメント内にあるため、コードのアップグレードはCouchDBレプリケーションで成し遂げられます。また、これは一つのデータベースで複数のアプリケーションをホストすることも可能にします。新聞の編集者が必要とするものと、読者が必要とするインタフェースは違えど、データはほとんどが同じ場合などです。それらは、両者とも同じデータベースに配置され、異なるデザインドキュメントで管理します。
 
 <p>A CouchDB database can contain many design documents. Example design DocIDs are:
+<p>CouchDBはたくさんのデザインドキュメントを格納することができます。デザインのDocIDの例は以下です。
 
 <pre>
 _design/calendar
@@ -68,6 +90,7 @@ _design/admin
 </pre>
 
 <p>In the full CouchDB URL structure, you’d be able to <code>GET</code> the design document JSON at URLs like:
+<p>完全なCouchDBのURLで表現すると以下のようなURLで、デザインドキュメントのJSONを<code>GET</code>できます。
 
 <pre>
 http://localhost:5984/mydb/_design/calendar
@@ -77,22 +100,32 @@ http://127.0.0.1:5984/mydb/_design/admin
 </pre>
 
 <p>We show this to note that design documents have a special case, as they are the only documents whose URLs can be used with a literal slash. We’ve done this because nobody likes to see <code>%2F</code> in their browser’s location bar. In all other cases, a slash in a DocID must be escaped when used in a URL. For instance, the DocID <code>movies/jaws</code> would appear in the URL like this: <code>http://127.0.0.1:5984/mydb/movies%2Fjaws</code>.
+<p>私たちはここでデザインドキュメントが持つ特殊なケースについて注意を述べます。それらは、ドキュメントのURLにスラッシュを使うことが出来ることです。誰もブラウザのロケーションバーに<code>%2F</code>を見たくないでしょうからやってみました。すべての他のケースで、DocIDのスラッシュはURLに使われる時にエスケープされている必要があります。例えば、DocID <code>movies/jaws</code>はこのようなURLで表現されます。<code>http://127.0.0.1:5984/mydb/movies%2Fjaws</code>
 
 <p>We’ll build the first iteration of the example application without using <code>show</code> or <code>list</code>, because writing Ajax queries against the JSON API is a better way to teach CouchDB as a database. The APIs we explore in the first iteration are the same APIs you’d use to analyze log data, archive assets, or manage persistent queues.
+<p>私たちは、サンプルアプリケーションの最初の反復を<code>show</code>もしくは<code>list</code>を使わずに構築します。なぜならJSON APIに逆らってAjaxクエリを書くことはデータベースとしてのCouchDBを教えるためには良い方法だからです。私たちが最初の反復で切り開いたAPIは、あなたがログデータの解析やアセットの保管、永続クエリの管理に使うであろうAPIと同じです。
 
 <p>In the second iteration, we’ll upgrade our example blog so that it can function with client-side JavaScript turned off. For now, sticking to Ajax queries gives more transparency into how CouchDB’s JSON/HTTP API works. JSON is a subset of JavaScript, so working with it in JavaScript keeps the impedance mismatch low, while the browser’s <em>XMLHttpRequest (XHR)</em> object handles the HTTP details for us.
+<p>二つ目の反復では、私たちはサンプルのblogをアップグレードし、クライアント側のJavaScriptを無くした。そして今は、CouchDBのJSONやHTTP APIがどのように動作するかについてAjaxクエリが更に透過性を提供することに着目している。JSONはJavaScriptのサブセットであり、JavaScriptの中で動くことが、ブラウザの<em>XMLHttpRequest (XHR)</em>オブジェクトがHTTPの詳細を扱っている間のミスマッチとなる抵抗を低く保っている。
 
 <p>CouchDB uses the <code>validate_doc_update</code> function to prevent invalid or unauthorized document updates from proceeding. We use it in the example application to ensure that blog posts can be authored only by logged-in users. CouchDB’s validation functions also can’t have any side effects, and they have the opportunity to block not only end user document saves, but also replicated documents from other nodes. We’ll talk about validation in depth in <a href="index.html#part/iii">Part III, “Example Application”</a>.
+<p>CouchDBは処理における許可されないドキュメントアップデートや無効なアップデートを防ぐために<code>validate_doc_update</code> functionを利用している。私たちはサンプルアプリケーションの中で、ログインした管理ユーザだけがblogを投稿できるようにすることを確実にするために、この方法を使っている。CouchDBの validation functionはまた、副作用を持つことがなく、エンドユーザドキュメントの保管のブロックや他のノードからのドキュメントの複製もブロックするための機会を持つ。
 
 <p>The raw images, JavaScript, CSS, and HTML assets needed by Sofa are stored in the <code>_attachments</code> field, which is interesting in that by default it shows only the stubs, rather than the full content of the files. Attachments are available on all CouchDB documents, not just design documents, so asset management applications have as much flexibility as they could need. If a set of resources is required for your application to run, they should be attached to the design document. This means that a new user can easily bootstrap your application on an empty database.
+<p>イメージやJavaScirpt, CSSやHTMLは <code>_attachments</code>フィールドに保管されたSofaによって必要とされます。デフォルトでは、そこにはファイルの完全な内容ではなくスタブだけが見えます。Attachmentsはデザインドキュメントだけではなく、すべてのCouchDBドキュメントで有効です。そして、アセット管理のアプリケーションはそれらが必要とされるぐらいとても柔軟です。もし、リソースのセットがあなたのアプリケーションを動かすのに必要とされるなら、それらはデザインドキュメントのattachmentとして追加されるべきです。これは、新しいユーザがあなたのアプリケーションを空のデータベースに簡単に配置することができることを示しています。
 
 <p>The other fields in the design document shown in <a href="#figure/1">Figure 1, “Anatomy of our design document”</a> (and in the design documents we’ll be using) are used by CouchApp’s upload process (see <a href="standalone.html">Chapter 10, Standalone Applications</a> for more information on CouchApp). The <code>signatures</code> field allows us to avoid updating attachments that have not changed between the disk and the database. It does this by comparing file content hashes. The <code>lib</code> field is used to hold additional JavaScript code and JSON data to be inserted at deploy time into view, show, and validation functions. We’ll explain CouchApp in the next chapter.
+<p><a href="#figure/1">Figure 1, “Anatomy of our design document”</a>に示しているデザインドキュメントの他のフィールド (そして、デザインドキュメントで私たちが使っている）はCouchAppのアップロードプロセスで使われています。(CouchApについての詳しい情報は<a href="standalone.html">Chapter 10, スタンドアローンアプリケーション</a>を参照) <code>signatures</code>フィールドは、ディスクとデータベースとの間で変更のない添付ファイルをアップロードすることを回避させてくれます。それはファイルコンテンツのハッシュを比較することで行っています。<code>lib</code>フィールドは追加のJavaScriptコードや、view, show , validation functionとして挿入されたJSONデータを保持するのに利用されます。次の章でCouchAppについて説明します。
+
 
 <h3 id="basic">A Basic Design Document</h3>
+<h3 id="basic">デザインドキュメントの基本</h3>
 
 <p>In the next section we’ll get into advanced techniques for working with design documents, but before we finish here, let’s look at a very basic design document. All we’ll do is define a single view, but it should be enough to show you how design documents fit into the larger system.
+<p>次のセクションでは、デザインドキュメントを動かす上での一歩進んだ技術を紹介します。しかし、ここで完了する前に、とても単純なデザインドキュメントを見てみましょう。一つのビユーで定義していますが、大きなシステムへ適用するデザインドキュメントをどう作ればよいかを見せるには十分でしょう。
 
 <p>First, add the following text (or something like it) to a text file called <code>mydesign.json</code> using your editor:
+<p>まず、以下のテキストを<code>mydesign.json</code>ファイルとしてエディターで作成します。
 
 <pre>
 {
@@ -106,6 +139,7 @@ http://127.0.0.1:5984/mydb/_design/admin
 </pre>
 
 <p>Now use <code>curl</code> to <code>PUT</code> the file to CouchDB (we’ll create a database first for good measure):
+<p>さて、<code>curl</code>を使って、CouchDBへファイルを<code>PUT</code>します。(まずは基本となるデータベースを作成します）
 
 <pre>
 curl -X PUT http://127.0.0.1:5984/basic
@@ -113,31 +147,40 @@ curl -X PUT http://127.0.0.1:5984/basic/_design/example -data-binarymydesign.jso
 </pre>
 
 <p>From the second request, you should see a response like:
+<p>二つ目のリクエストの返答として、以下のようなものが戻ってくるでしょう。
 
 <pre>
 {"ok":true,"id":"_design/example","rev":"1-230141dfa7e07c3dbfef0789bf11773a"}
 </pre>
 
 <p>Now we can query the view we’ve defined, but before we do that, we should add a few documents to the database so we have something to view. Running the following command a few times will add empty documents:
+<p>今、先ほど定義したビューをクエリできました。しかし、そのビューを実行するまえに、ビューするための対象であるいくつかのドキュメントをデータベースに追加するべきです。以下のコマンドを何回か実行して空のドキュメントを追加しましょう。
 
 <pre>
 curl -X POST http://127.0.0.1:5984/basic -d '{}'
 </pre>
 
 <p>Now to query the view:
+<p>さて、ビューを見てみましょう。
 
 <pre>
 curl http://127.0.0.1:5984/basic/_design/example/_view/foo
 </pre>
 
 <p>This should give you a list of all the documents in the database (except the design document). You’ve created and used your first design document!
+<p>これによりデータベースのすべてのドキュメントのリストが得られます。（デザインドキュメントを除く）これで、初めてのデザインドキュメントを作って利用しました！
 
 <h3 id="future">Looking to the Future</h3>
 
 <p>There are other design document functions that are being introduced at the time of this writing, including <code>_update</code> and <code>_filter</code> that we aren’t covering in depth here. Filter functions are covered in <a href="notifications.html">Chapter 20, Change Notifications</a>. Imagine a web service that <code>POSTs</code> an XML blob at a URL of your choosing when particular events occur. PayPal’s instant payment notification is one of these. With an <code>_update</code> handler, you can <code>POST</code> these directly in CouchDB and it can parse the XML into a JSON document and save it. The same goes for CSV, multi-part form, or any other format.
+<p>この文章の中で何度か別のデザインドキュメントの関数について紹介してきました。たとえば、<code>_update</code>や<code>_filter</code>です。これらはここでは深くは触れません。Filter functionは<a href="notifications.html">Chapter 20, Change Notifications</a>で述べます。特別なイベントが起きる時に選択するURLでXML blobを<code>POSTs</code>するWebサービスをイメージしてください。PayPalの"instant payment notification"はその一つです。<code>_update</code>ハンドラーによって、これらを直接CouchDBへPOSTすることができ、XMLをパースした後にJSONドキュメントとしてそれを保存できます。これはCSVやmulti-part form、他のフォーマットにも言えます。
 
 <p>The bigger picture we’re working on is like an app server, but different in one crucial regard: rather than let the developer do whatever he wants (loop a list of DocIDs and make queries, make queries based on the results of other queries, etc.), we’re defining “safe” transformations, such as view, show, list, and update. By safe, we mean that they have well-known performance characteristics and otherwise fit into CouchDB’s architecture in a streamlined way.
+<p>私たちが動かした概要はアプリケーションサーバのようなものです。しかし、一つ決定的に違うものがあります。開発者が望むものはなんでもできます。（DocIDのリストをループさせ、クエリをつくり、他のクエリの結果に基づいたクエリを作り、など）私たちは"安全な"変換を定義しています。それは、viewやshow, listやupdateです。これによって、開発者は良く知られたパフォーマンスの特徴を持ち、さもなくば合理化された手段でのCouchDBのアーキテクチャーにフィットさせることを示しています。
 
 <p>The goal here is to provide a way to build standalone apps that can also be easily indexed by search engines and used via screen readers. Hence, the push for plain old HTML. You can pretty much rely on JavaScript getting executed (except when you can’t). Having HTML resources means CouchDB is suitable for public-facing web apps.
+<p>ここでのゴールは、サーチエンジンでの簡単なインデックス作成やスクリーンリーダーを通して利用されることを可能にするためのスタンド
+アローンアプリケーションを構築する方法を提供することです。ゆえに、プレーンテキストのHTMLを進めます。JavaScriptで実行されることを>当てにしても構いません（出来ない時を除いて）。HTMLリソースを持つことは、CouchDBが一般的なWebアプリケーションの表向きとしても適し>ていることを意味しています。
 
 <p>On the horizon are a rewrite handler and a database event handler, as they seem to flesh out the application capabilities nicely. A rewrite handler would allow your application to present its own URL space, which would make integration into existing systems a bit easier. An event handler would allow you to run asynchronous processes when the database changes, so that, for instance, a document update can trigger a workflow, multi-document validation, or message queue.
+<p>平行して、アプリケーションの機能を良い方向に具体化するような rewriteハンドラーやデータベースイベントハンドラーがあります。rewriteハンドラーは、アプリケーションをそれ自身のURLスペースで表現することを可能にします。既に動作するシステムの一部として簡単に統合できます。イベントハンドラーはデータベースが変更された時に非同期でプロセスを実行することを可能にします。例えば、ドキュメントのアップデートでワークフローをトリガーしたり、マルチドキュメントの認証を実施したりメッセージをキューしたりなどです。

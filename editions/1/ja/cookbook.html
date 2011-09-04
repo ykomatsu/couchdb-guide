@@ -11,10 +11,13 @@
 <script src="../../../script.js"></script>
 
 <h2 id="cookbook">View Cookbook for SQL Jockeys</h2>
+<h2 id="cookbook">SQL使いのためのビュークックブック</h2>
 
 <p>This is a collection of some common SQL queries and how to get the same result in CouchDB. The key to remember here is that CouchDB does not work like an SQL database at all and that best practices from the SQL world do not translate well or at all to CouchDB. This chapter’s “cookbook” assumes that you are familiar with the CouchDB basics such as creating and updating databases and documents.
+<p>この章は、いくつかのよくあるSQLによる問い合わせとCouchDBで同じ結果を得るにはどうしたらよいかを集めたものです。ここで思い出してほしいポイントは、CouchDBはSQLデータベースのような動作は全くせず、SQLの世界のベストプラクティスはCouchDBに対してうまくいかない、あるいは全然通用しない、ということです。このクックブックでは、あなたがCouchDBの基本、データベースやドキュメントの作成や更新について、よく知っていることを前提にします。
 
 <h3 id="using">Using Views</h3>
+<h3 id="using">ビューを使用する</h3>
 
 <p>How you would do this in SQL:
 
@@ -29,10 +32,13 @@ ALTER TABLE
 </pre>
 
 <p>Using views is a two-step process. First you <em>define</em> a view; then you <em>query</em> it. This is analogous to defining a table structure (with indexes) using <code>CREATE TABLE</code> or <code>ALTER TABLE</code> and querying it using an SQL query.
+<p>ビューを使うにには2つのプロセスがあります。まず、ビューを定義すること、そして次にビューに対して問い合わることです。これは、(インデックス付きで)テーブルの構造を <code>CREATE TABLE</code> あるいは <code>ALTER TABLE</code> で定義し、SQLクエリを用いて問い合わせるのと似ています。
 
 <h4 id="defining">Defining a View</h4>
+<h4 id="defining">ビューを定義する</h4>
 
 <p>Defining a view is done by creating a special document in a CouchDB database. The only real specialness is the <code>_id</code> of the document, which starts with <code>_design/</code>—for example, <code>_design/application</code>. Other than that, it is just a regular CouchDB document. To make sure CouchDB understands that you are defining a view, you need to prepare the contents of that design document in a special format. Here is an example:
+<p>ビューの定義は、CouchDBに特定のドキュメントを作成することによって行われます。そのドキュメントの唯一特別な点は <code>_id</code> フィールドです。 例えば、<code>_design/application</code> のように <code>_design</code> という文字で始まります。これ点を除いては、普通のCouchDBドキュメントです。CouchDBに定義しようとしているビューを理解させるために、特定のフォーマットでデザインドキュメントのコンテンツを準備する必要があります。以下はサンプルです。
 
 <pre>
 {
@@ -48,8 +54,11 @@ ALTER TABLE
 </pre>
 
 <p>We are defining a view <code>viewname</code>. The definition of the view consists of two functions: the <em>map</em> function and the <em>reduce</em> function. Specifying a reduce function is optional. We’ll look at the nature of the functions later. Note that <code>viewname</code> can be whatever you like: <code>users</code>, <code>by-name</code>, or <code>by-date</code> are just some examples.
+<p>ここでは <code>viewname</code> という名前のビューを定義しています。ビューの定義では、2つの関数からなります。 <code>map</code> 関数と <code>reduce</code> 関数です。 <code>reduce</code> 関数の定義はオプションです。関数の本質についてはあとで触れます。 <code>viewname</code> というビューの名前は好きなようにつけることができます。例えば <code>users</code> 、 <code>by-name</code> 、あるいは <code>by date</code> などです。
+
 
 <p>A single design document can also include multiple view definitions, each identified by a unique name:
+<p>一つのデザインドキュメントには、ユニークな名前で一意に特定される複数のビューの定義を格納することができます。
 
 <pre>
 {
@@ -69,26 +78,39 @@ ALTER TABLE
 </pre>
 
 <h4 id="querying">Querying a View</h4>
+<h4 id="querying">ビューに対して問い合わせる</h4>
 
 <p>The name of the design document and the name of the view are significant for querying the view. To query the view <code>viewname</code>, you perform an HTTP <code>GET</code> request to the following URI:
+<p>デザインドキュメントの名前とビューの名前は、ビューの問い合わせのにおいて非常に重要な意味を持ちます。 <code>viewname</code> という名前のビューに問い合わせるためには、HTTP <code>GET</code> リクエストを次のURIに発行します。
+
 
 <pre>
 /database/_design/application/_view/viewname
 </pre>
 
 <p><code>database</code> is the name of the database you created your design document in. Next up is the design document name, and then the view name prefixed with <code>_view/</code>. To query <code>anotherview</code>, replace <code>viewname</code> in that URI with <code>anotherview</code>. If you want to query a view in a different design document, adjust the design document name.
+<p><code>database</code> はあなたがデザインドキュメントを作ったデータベースの名前です。その次に、デザインドキュメントの名前が来て、 <code>_view</code> というプリフィックスに続いてビューの名前が来ます。もし異なる別のデザインドキュメントのビューに問い合わせたければ、デザインドキュメントの名前を合わせてください。
+
 
 <h4 id="mapreduce">MapReduce Functions</h4>
+<h4 id="mapreduce">MapReduce関数</h4>
 
 <p>MapReduce is a concept that solves problems by applying a two-step process, aptly named the <em>map</em> phase and the <em>reduce</em> phase. The map phase looks at all documents in CouchDB separately one after the other and creates a <em>map result</em>. The map result is an ordered list of key/value pairs. Both <code>key</code> and <code>value</code> can be specified by the user writing the map function. A map function may call the built-in <code>emit(key, value)</code> function 0 to <em>N</em> times per document, creating a row in the map result per invocation.
+<p>MapReduce は(mapフェーズおよびreduceフェーズというよい名前の)二つのステップを適用することで問題を解決するコンセプトです。mapフェーズではCouchDBの中に保存されている全てのドキュメントを１つ１つ検査し、結果を作成します。mapフェーズの結果は、キーバリューペアの、順序付きリストです。キーもバリューもユーザーがmap関数の中に記述します。map関数では、 1つのドキュメントに対して、 <code>emit(key, value)</code> という組み込み関数を0回からN回呼び出し、呼び出し毎にmapフェーズの結果の行を1つ作ります。
+
 
 <p>CouchDB is smart enough to run a map function only once for every document, even on subsequent queries on a view. Only changes to documents or new documents need to be processed anew.
+<p>CouchDBは賢いので、ビューが何回呼び出されても、各ドキュメント毎に1回のmap関数しか呼び出しません。ドキュメントに対する変更が行われたとき、あるいは新しいドキュメントが追加されたときだけ、改めて実行されます。
 
 <h5 id="map">Map functions</h5>
+<h5 id="map">map関数</h5>
 
 <p>Map functions run in isolation for every document. They can’t modify the document, and they can’t talk to the outside world—they can’t have <em>side effects</em>. This is required so that CouchDB can guarantee correct results without having to recalculate a complete result when only one document gets changed.
+<p>map関数は、それぞれのドキュメントに対して独立して実行されます。それぞれの呼び出しにおいて、ドキュメントを変更することはできませんし、外の世界と話すこともできません。副作用を起こすことができないのです。これはCouchDBが、一つのドキュメントが変更されただけで全ての結果を再計算せずに結果の正しさを保証するために必要なことです。
+
 
 <p>The map result looks like this:
+<p>map関数の結果は次のような形です。
 
 <pre>
 {"total_rows":3,"offset":0,"rows":[
@@ -99,8 +121,10 @@ ALTER TABLE
 </pre>
 
 <p>It is a list of rows sorted by the value of <code>key</code>. The <code>id</code> is added automatically and refers back to the document that created this row. The <code>value</code> is the data you’re looking for. For example purposes, it’s the girl’s age.
+<p><code>key</code> の値に基づく並び替えされた行のリストです。
 
 <p>The map function that produces this result is:
+<p>この結果を生成するmap関数は次の通りです。
 
 <pre>
 function(doc) {
@@ -111,12 +135,17 @@ function(doc) {
 </pre>
 
 <p>It includes the <code>if</code> statement as a sanity check to ensure that we’re operating on the right fields and calls the <code>emit</code> function with the name and age as the key and value.
+<p><code>if</code>ステートメントは、正しいフィールドに操作しようとしているかどうかを確認する健全なチェック機構として働きます。 [#]_ そして <code>emit</code> 関数を呼び出して <code>name</code> と <code>age</code> をそれぞれキーおよびバリューとして渡しています。
+
 
 <h5 id="reduce">Reduce functions</h5>
+<h5 id="reduce">reduce関数</h5>
 
 <p>Reduce functions are explained in <a href="#aggregate">the section called “Aggregate Functions”</a>.
+<p>reduce関数は集合関数のセクションで説明します。
 
 <h3 id="key">Look Up by Key</h3>
+<h3 id="key">完全一致検索</h3>
 
 <p>How you would do this in SQL:
 
@@ -125,10 +154,15 @@ SELECT <em>field</em> FROM <em>table</em> WHERE value="<em>searchterm</em>"
 </pre>
 
 <p>Use case: get a <em>result</em> (which can be a record or set of records) associated with a <em>key</em> (<code>"searchterm"</code>).
+<p>ユースケース: <code>"searchterm"</code> というキーに関連づけられた結果(1つのレコード、またはその集合)を取得します
+
 
 <p>To look something up quickly, regardless of the storage mechanism, an index is needed. An index is a data structure optimized for quick search and retrieval. CouchDB’s map result is stored in such an index, which happens to be a B+ tree.
+<p>ストレージ機構によらず、検索を素早く行うにはインデックスが必要です。インデックスは素早い検索と取得を目的として最適化されたデータ構造です。CouchDBのmap関数の結果はこのようなインデックスとして保存されており、偶然ですがB+木となっています。
 
 <p>To look up a value by <code>"searchterm"</code>, we need to put all values into the key of a view. All we need is a simple map function:
+<p>値が <code>"searchterm"</code> というドキュメントを検索するには、全ての値をビューのキーに配置しなければなりません。これには、単純なmap関数として次のような関数を登録するだけです。
+
 
 <pre>
 function(doc) {
@@ -139,12 +173,14 @@ function(doc) {
 </pre>
 
 <p>This creates a list of documents that have a <code>value</code> field sorted by the data in the <code>value</code> field. To find all the records that match <code>"searchterm"</code>, we query the view and specify the search term as a query parameter:
+<p>この関数は <code>value</code> というフィールドを持っているドキュメントに対して、<code>value</code> フィールドの値で並び替えられたリストを作成します。リストから <code>"searchterm"</code> にマッチするすべてのレコードを見つけるには、クエリパラメーターに次のように指定してビューに問い合わせます。
 
 <pre>
 /database/_design/application/_view/viewname?key="searchterm"
 </pre>
 
 <p>Consider the documents from the previous section, and say we’re indexing on the <code>age</code> field of the documents to find all the five-year-olds:
+<p>前のセクションで紹介したドキュメントで考えてみましょう。5歳の子どもたちを検索するには、次のようにインデックスを再構築します。
 
 <pre>
 function(doc) {
@@ -155,12 +191,14 @@ function(doc) {
 </pre>
 
 <p>Query:
+<p>問い合わせはこうです。
 
 <pre>
 /ladies/_design/ladies/_view/age?key=5
 </pre>
 
 <p>Result:
+<p>結果はこうなります。
 
 <pre>
 {"total_rows":3,"offset":1,"rows":[
@@ -169,10 +207,14 @@ function(doc) {
 </pre>
 
 <p>Easy.
+<p>簡単でしょう。
 
 <p>Note that you have to emit a value. The view result includes the associated document ID in every row. We can use it to look up more data from the document itself. We can also use the <code>?include_docs=true</code> parameter to have CouchDB fetch the documents individually for us.
+<p>値を発行しなければならない点に注意してください。ビューの結果には、それぞれの行の中に、map関数を実行したときの [#]_ ドキュメントのidが含まれています。これを使えば、ドキュメントの情報を取得する事ができます。あるいは、<code>?include_docs=true</code> というパラメーターをつけることでCouchDBにここのドキュメントを取得するように指示することもできます。
+
 
 <h3 id="prefix">Look Up by Prefix</h3>
+<h3 id="prefix">前方一致検索</h3>
 
 <p>How you would do this in SQL:
 
@@ -181,8 +223,10 @@ SELECT <em>field</em> FROM <em>table</em> WHERE <em>value</em> LIKE "<em>searcht
 </pre>
 
 <p>Use case: find all documents that have a field value that starts with <code>searchterm</code>. For example, say you stored a MIME type (like <code>text/html</code> or <code>image/jpg</code>) for each document and now you want to find all documents that are images according to the MIME type.
+<p>ユースケース: <code>searchterm</code> という文字で始まる値をもつドキュメントを全て検索します。例えば、mime-type(text/htmlやimage/jpg等)をを各ドキュメントが持っていて、mime-type に従って画像を検索したい場合です。
 
 <p>The solution is very similar to the previous example: all we need is a map function that is a little more clever than the first one. But first, an example document:
+<p>このケースの解決方法は、前の方法と似ています。map関数だけが必要ですが、前のものより少し賢いものです。まず例となるドキュメントです。
 
 <pre>
 {
@@ -194,6 +238,7 @@ SELECT <em>field</em> FROM <em>table</em> WHERE <em>value</em> LIKE "<em>searcht
 </pre>
 
 <p>The clue lies in extracting the prefix that we want to search for from our document and putting it into our view index. We use a regular expression to match our prefix:
+<p>ヒントはドキュメントから検索したいプレフィックスを抽出し、それをビューのインデックスとして配置することです。プレフィックスを抽出するために正規表現を使います。
 
 <pre>
 function(doc) {
@@ -209,12 +254,15 @@ function(doc) {
 </pre>
 
 <p>We can now query this view with our desired MIME type prefix and not only find all images, but also text, video, and all other formats:
+<p>これで、目的のmime-typeプレフィックスを検索できます。画像でなく、テキスト、動画、あるいは他のフォーマットも検索できますね。
+
 
 <pre>
 /files/_design/finder/_view/by-mime-type?key="image/"
 </pre>
 
 <h3 id="aggregate">Aggregate Functions</h3>
+<h3 id="aggregate">集合関数</h3>
 
 <p>How you would do this in SQL:
 
@@ -223,14 +271,19 @@ SELECT COUNT(<em>field</em>) FROM <em>table</em>
 </pre>
 
 <p>Use case: calculate a derived value from your data.
+<p>ユースケース: データから取得した値を計算します。
 
 <p>We haven’t explained reduce functions yet. Reduce functions are similar to aggregate functions in SQL. They compute a value over multiple documents.
+<p>まだreduce関数について説明していませんでした。reduce関数はSQLの集合関数と似ています。reduce関数は複数のドキュメントに渡って一つの値を計算します。
 
 <p>To explain the mechanics of reduce functions, we’ll create one that doesn’t make a whole lot of sense. But this example is easy to understand. We’ll explore more useful reductions later.
+<p>reduce関数の仕組みを説明するために、あまり多くのことをしないreduce関数を作りましょう。この例は簡単で理解しやすいものです。その後でもっと役立つreduce関数を考えます。
 
 <p>Reduce functions operate on the output of the map function (also called the <em>map re⁠sult</em> or <em>intermediate result</em>). The reduce function’s job, unsurprisingly, is to reduce the list that the map function produces.
+<p>reduce関数はmap関数の出力(あるいは結果、またはその中間値)に対して作用します。reduce関数の仕事は、当然、map関数が生成したリストを減らすことです。
 
 <p>Here’s what our summing reduce function looks like:
+<p>これは合計を計算するreduce関数です。
 
 <pre>
 function(keys, values) {
@@ -243,6 +296,7 @@ function(keys, values) {
 </pre>
 
 <p>Here’s an alternate, more idiomatic JavaScript version:
+<p>もっと自然なJavaScriptで書くならばこうです。
 
 <pre>
 function(keys, values) {
@@ -255,12 +309,16 @@ function(keys, values) {
 </pre>
 
 <p>This reduce function takes two arguments: a list of <code>keys</code> and a list of <code>values</code>. For our summing purposes we can ignore the <code>keys</code>-list and consider only the <code>value</code> list. We’re looping over the list and add each item to a running total that we’re returning at the end of the function.
+<p>このreduce関数は2つの引数をとります。キーのリストとバリューのリストです。合計を計算する場合は、キーのリストは無視して、バリューのリストだけを考えればよいです。リストに対してループを回し、合計値に加算していきます。そして、関数の最後でその合計値を返します。
 
 <p>You’ll see one difference between the map and the reduce function. The map function uses <code>emit()</code> to create its result, whereas the reduce function returns a value.
+<p>あなたは、map関数とreduce関数の違いを見つけたことでしょう。map関数は <code>emit()</code> を用いて結果を生成しますが、reduce関数は <code>'return'</code> で1つの値を返します。
 
 <p>For example, from a list of integer values that specify the age, calculate the sum of all years of life for the news headline, “786 life years present at event.” A little contrived, but very simple and thus good for demonstration purposes. Consider the documents and the map view we used earlier in this chapter.
+<p>例えば、ニュースの見出しに「786年分の生命が参加しています」と記すために、年齢が記されている整数値のリストから、すべての年齢の合計値を計算する例を考えます。少し不自然な話ですが、非常に単純ですから、デモ目的にはよいでしょう。ドキュメントとmap関数については、前の章で使ったものを想定しています。
 
 <p>The reduce function to calculate the total age of all girls is:
+<p>全ての女の子の年齢の合計を計算するreduce関数は次のようになります。
 
 <pre>
 function(keys, values) {
@@ -269,8 +327,10 @@ function(keys, values) {
 </pre>
 
 <p>Note that, instead of the two earlier versions, we use CouchDB’s predefined <code>sum()</code> function. It does the same thing as the other two, but it is such a common piece of code that CouchDB has it included.
+<p>既にでてきた２つのreduce関数の代わりに、CouchDBが事前定義している <code>sum()</code> 関数を使いました。これは前の2つのものと同じですが、よくあるコード断片なのでCouchDBが持っているのです。
 
 <p>The result for our reduce view now looks like this:
+<p>これで結果は次のようになります。
 
 <pre>
 {"rows":[
@@ -279,14 +339,19 @@ function(keys, values) {
 </pre>
 
 <p>The total sum of all <code>age</code> fields in all our documents is <code>15</code>. Just what we wanted. The <code>key</code> member of the result object is <code>null</code>, as we can’t know anymore which documents took part in the creation of the reduced result. We’ll cover more advanced reduce cases later on.
+<p>私たちのドキュメントの中に入っている年齢の全ての合計は15です。これがほしかったのです。結果のオブジェクトの <code>key</code> メンバーの値は <code>null</code> です。これは、どのドキュメントからreduce関数の結果が作られたのか知るすべがないからです。続いて、もう少し進んだreduce関数の例を見ていきましょう。
+
 
 <p>As a rule of thumb, the reduce function should reduce a single scalar value. That is, an integer; a string; or a small, fixed-size list or object that includes an aggregated value (or values) from the <code>values</code> argument. It should never just return <code>values</code> or similar. CouchDB will give you a warning if you try to use reduce “the wrong way”:
+<p>経験からいえば、reduce関数は一つのスカラー値を返すべきです。スカラー値とは整数値や文字列、小さな固定長の配列またはオブジェクトで、これらは、<code>values</code> 引数から集約された値(または値の集合)を持っています。 <code>values</code> そのものを返すべきではありません。もしあなたが間違った方法で <code>reduce</code> を使ったのならば、次のように CouchDBが警告を返すでしょう。
+
 
 <pre>
 {"error":"reduce_overflow_error","message":"Reduce output must shrink more rapidly: Current output: ..."}
 </pre>
 
 <h3 id="unique">Get Unique Values</h3>
+<h3 id="unique">一意の値を取得する</h3>
 
 <p>How you would do this in SQL:
 
@@ -295,8 +360,10 @@ SELECT DISTINCT <em>field</em> FROM <em>table</em>
 </pre>
 
 <p>Getting unique values is not as easy as adding a keyword. But a reduce view and a special query parameter give us the same result. Let’s say you want a list of tags that your users have tagged themselves with and no duplicates.
+<p>一意の値を取得するのはキーワードを追加するほど簡単ではありません。しかし、reduceを用いたビューと特別なクエリパラメーターを用いることで、同じ結果を得られます。ユーザーが自分自身につけたタグのリストを重複なく取得したいときを考えましょう。
 
 <p>First, let’s look at the source documents. We punt on <code>_id</code> and <code>_rev</code> attributes here:
+<p>まず、元になるドキュメントを見てみます。 <code>_id</code> と <code>_rev</code> 属性は省略しています。
 
 <pre>
 {
@@ -316,6 +383,7 @@ SELECT DISTINCT <em>field</em> FROM <em>table</em>
 </pre>
 
 <p>Next, we need a list of all tags. A map function will do the trick:
+<p>まずは、全てのタグを含んだ一つのリストが必要です。これはmap関数に仕込みます。
 
 <pre>
 function(dude) {
@@ -328,6 +396,7 @@ function(dude) {
 </pre>
 
 <p>The result will look like this:
+<p>結果は次のようになるでしょう。
 
 <pre>
 {"total_rows":9,"offset":0,"rows":[
@@ -344,6 +413,7 @@ function(dude) {
 </pre>
 
 <p>As promised, these are all the tags, including duplicates. Since each document gets run through the map function in isolation, it cannot know if the same key has been emitted already. At this stage, we need to live with that. To achieve uniqueness, we need a reduce:
+<p>約束したとおり、全てのタグが重複も含めて出てきています。それぞれのドキュメントがmap関数に独立して渡されているため、同じキーがすでに発行されたかどうかを知ることができません。この時点では、こうするほかありません。一意性を達成するには 次のような reduce関数が必要です。
 
 <pre>
 function(keys, values) {
@@ -352,12 +422,15 @@ function(keys, values) {
 </pre>
 
 <p>This reduce doesn’t do anything, but it allows us to specify a special query parameter when querying the view:
+<p>このreduce関数は何もしません。しかし、このようにすることで、特別なクエリパラメーターをビューの問い合わせ時に利用することができるようになるのです。
+
 
 <pre>
 /dudes/_design/dude-data/_view/tags?group=true
 </pre>
 
 <p>CouchDB replies:
+<p>CouchDBは次のように返します。
 
 <pre>
 {"rows":[
@@ -372,8 +445,10 @@ function(keys, values) {
 </pre>
 
 <p>In this case, we can ignore the value part because it is always true, but the result includes a list of all our tags and no duplicates!
+<p>このケースでは、<code>value</code>部分は常にtrueなので無視することができますが、これで、結果に全てのタグが重複なくはいってきたでしょう！
 
 <p>With a small change we can put the reduce to good use, too. Let’s see how many of the non-unique tags are there for each tag. To calculate the tag frequency, we just use the summing up we already learned about. In the map function, we emit a <code>1</code> instead of <code>null</code>:
+<p>それぞれのタグについて、重複の数を数える場合を考えてみましょう。reduce関数もうまく使えるように少しの変更します。
 
 <pre>
 function(dude) {
@@ -386,6 +461,7 @@ function(dude) {
 </pre>
 
 <p>In the reduce function, we return the sum of all values:
+<p>reduce関数では、値の合計を返します。
 
 <pre>
 function(keys, values) {
@@ -394,6 +470,7 @@ function(keys, values) {
 </pre>
 
 <p>Now, if we query the view with the <code>?group=true</code> parameter, we get back the count for each tag:
+<p>これで <code>?group=true</code> パラメーターを使ってビューに問い合わせれば、それぞれのタグの数を取得できます。
 
 <pre>
 {"rows":[
@@ -408,6 +485,7 @@ function(keys, values) {
 </pre>
 
 <h3 id="uniqueness">Enforcing Uniqueness</h3>
+<h3 id="uniqueness">一意性を強制するには</h3>
 
 <p>How you would do this in SQL:
 
@@ -416,7 +494,10 @@ UNIQUE KEY(<em>column</em>)
 </pre>
 
 <p>Use case: your applications require that a certain value exists only once in a database.
+<p>ユースケース: あなたのアプリケーションでは、特定の値がデータベース内に一度だけ現れるようにする必要があります。
 
 <p>This is an easy one: within a CouchDB database, each document must have a unique <code>_id</code> field. If you require unique values in a database, just assign them to a document’s <code>_id</code> field and CouchDB will enforce uniqueness for you.
+<p>これは簡単です。CouchDBのデータベース内では、それぞれのドキュメントは一意の <code>_id</code> フィールドを持たなければなりません。もしデータベースで一意の値を必要とするならば、その値をドキュメントの <code>_id</code> フィールドに設定すれば、CouchDBが一意性を強制してくれるでしょう。
 
 <p>There’s one caveat, though: in the distributed case, when you are running more than one CouchDB node that accepts write requests, uniqueness can be guaranteed only per node or outside of CouchDB. CouchDB will allow two identical IDs to be written to two different nodes. On replication, CouchDB will detect a conflict and flag the document accordingly.
+<p>とはいえ、一つ気をつけることがあります。CouchDBのノードを2つ以上動作させ、書くノードで書き込みリクエストを許可するような分散システムのケースでは、一意性は各ノード毎のみ、あるいはCouchDBの外で保証するしかありません。CouchDBは二つの全く同じidが2つのノードに書き込まれることを許してしまいます。レプリケーション時に、CouchDBは衝突を検知し、適切にドキュメントにフラグ付けを行うでしょう。

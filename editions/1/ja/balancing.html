@@ -11,31 +11,44 @@
 <script src="../../../script.js"></script>
 
 <h2 id="balancing">Load Balancing</h2>
+<h2 id="balancing">負荷分散</h2>
 
 <p>Jill is woken up at 4:30 a.m. by her mobile phone. She receives text message after text message, one every minute. Finally, Joe calls. Joe is furious, and Jill has trouble understanding what Joe is saying. In fact, Jill has a hard time figuring out why Joe would call her in the middle of the night. Then she remembers: Joe is running an online shop selling sports gear on one of her servers, and he is furious because the server went down and now his customers in New Zealand are angry because they can’t get to the online shop.
+<p>ジルは朝の４時半にケータイに起こされた。一分ごとにメールが来て、鳴っている。 最後には電話がかかってきた。ジョーからだ。ジョーは怒り狂っていて何を言っているのかよく分からない。なんでこんな夜中にジョーが電話をかけてくるのか、ジルは理解するのに少し時間がかかったが、ようやく思い出した：ジョーはあなたのサーバでスポーツ用品のオンラインショップを開いていて、あなたのサーバが落ちていた。ジョーのニュージーランド（時差は大丈夫？）の顧客がサイトを見れず怒っているので、ジョーは激怒していたのです。
+
 
 <p>This is a typical scenario, and you have probably seen many variations of it, being in the role of Jill, Joe, or both. If you are Jill, you want to sleep at night, and if you are Joe, you want your customers to buy from you whenever it pleases them.
+<p>これはあなたがジルもしくはジョーの役で何度も出くわした典型的なシナリオだと思います。もしもジルなら夜は寝ていたいし、もしもジョーなら顧客がほしいときに商品を買ってもらいたいでしょう。
+
 
 <h3 id="backup">Having a Backup</h3>
+<h3 id="backup">バックアップしておく</h3>
 
 <p>The problems persist: computers fail, and in many ways. There are hardware problems, power outages, bugs in the operating system or application software, etc. Only CouchDB doesn’t have any bugs. (Well, of course, that’s not true. All software has bugs, with the possible exception of things written by Daniel J. Bernstein and Donald Knuth.)
+<p>問題は、コンピュータは壊れること、しかも何通りもの方法で壊れることです。ハードウェアの問題、停電、OSやアプリケーションのバグなど。CouchDBだけがバグを持っていません。いや、もちろん冗談ですが、CouchDBでさえ問題があって、どんなソフトウェアの欠片でさえバグからは逃れられません（ただしクヌースのTeXは例外でしょう）。 
 
 <p>Whatever the cause is, you want to make sure that the service you are providing (in Jill and Joe’s case, the database for an online store) is resilient against failure. The road to resilience is a road of finding and removing single points of failure. A server’s power supply can fail. To keep the server from turning off during such an event, most come with at least two power supplies. To take this further, you could get a server where everything is duplicated (or more), but that would be a highly specialized (and expensive) piece of hardware. It is much cheaper to get two similar servers where the one can take over if the other has a problem. However, you need to make sure both servers have the same set of data in order to switch them without a user noticing.
+<p>故障の原因が何であれ、あなたのサービス（このケースではオンラインストアのデータベース）が故障せずにちゃんと動いていることを確信したいと思っていることでしょう。耐障害性への道は、SPOF（単一故障点）を発見して取り除く道です：例えば給電は止まることがあります。サーバがそのようなイベントを避けるために、電源を冗長化します。これが行き過ぎると、サーバの全てを二重化（もしくはそれ以上の多重化）をしたくなってきますが、高度に特殊な（しかも高価な）ハードウェアになってしまいます。似たようなサーバを二つ並べて、一方に問題があったら他方が交代するように作る方がずっと安上がりです。ユーザに気付かれずに切り替えるために、どちらのサーバも同じデータを持っていなければなりません。
 
 <p>Removing all single points of failure will give you a highly available or a fault-tolerant system. The order of tolerance is restrained only by your budget. If you can’t afford to lose a customer’s shopping cart in any event, you need to store it on at least two servers in at least two far apart geographical locations.
+<p>全てのSPOF(単一故障点)を取り除けば、可用性、耐障害性の高いシステムが作れます。耐障害性の優先順位はあなたの予算のみに依存します。もしも顧客のショッピングカートがどんな状況でも失われてはならないのであれば、少なくとも２台の遠隔地に分散したサーバにデータを配置する必要があります。
 
 <div class="aside note">
 
 <p>Amazon does this for the <a href="http://www.amazon.com">Amazon.com</a> website. If one data center is the victim of an earthquake, a user will still be able to shop.
+<p>例えば、アマゾンは amazon.com のサイトでそれをやっています。もし、あるデータセンターが地震の犠牲になってもユーザーは買い物を続けられます。アマゾンの問題はあなたの問題とは違うかもしれませんが、代わりにあなたはデータセンターが見えなくなったときの全く別の問題を抱えることになるでしょう。それでも、サーバの故障くらいには対応したいと思うでしょう。
 
 <p>It is likely, though, that Amazon’s problems are not your problems and that you will have a whole set of new problems when your data center goes away. But you still want to be able to live through a server failure.
 
 </div>
 
 <p>Before we dive into setting up a highly available CouchDB system, let’s look at another situation. Joe calls Jill during regular business hours and relays his customers’ complaints that loading the online shop takes “forever.” Jill takes a quick look at the server and concludes that this is a lucky problem to have, leaving Joe puzzled. Jill explains that Joe’s shop is suddenly attracting many more users who are buying things. Joe chimes in, “I got a great review on that blog. That’s where they must be coming from.” A quick referrer check reveals that indeed many of the new customers are coming from a single site. The blog post already includes comments from unhappy customers voicing their frustration with the slow site. Joe wants to make his customers happy and asks Jill what to do. Jill advises that they set up a second server that can take half of the load of the current server, making sure all requests get answered in a reasonable amount of time. Joe agrees, and Jill begins to set things up.
+<p>高可用なCouchDBシステムのセットアップに入る前に、別のシチュエーションを見ておきましょう. ジョーは営業時間帯にジルに電話して、「オンラインショップのページ読み込みが **終わらない** 」という彼の顧客のクレームを伝えます。ジルはサーバをちょっと覗いてこれはラッキーな問題だと分かり、ジョーを混乱させます。ジョーの店は客が急激に増えているのが原因でした。ジョーは「あのブログで取り上げられたからだ」と気付き、そこからアクセスが来てるはずだと慌ててリファラをチェックすると、沢山の新規顧客がひとつのサイトから来ているのが分かります。問題のブログ記事には、サイトが重いと既にネガティブなコメントがつけられていました。ジョーは顧客を満足させるために、ジルにどうしたらいいかを尋ねます。ジルは二台目のサーバを立てて、今のサーバの負荷を分散させれば、今のリクエストは捌けるだろうと答えました。ジョーはそれに合意して、ジルに仕事を頼みました。
 
 <p>The solution to the outlined problem looks a lot like the earlier one for providing a fault-tolerant setup: install a second server and synchronize all data. The difference is that with fault tolerance, the second server just sits there and waits for the first one to fail. In the server-overload case, a second server helps answer all incoming requests. This case is not fault-tolerant: if one server crashes, the other will get all the requests and will likely break down, or at least provide very slow service, either of which is not acceptable.
+<p>この例題の答えは、耐障害性の高いシステム構成を組むときの問題に似ています：二台目のサーバを立てて全てのデータを同期すればよいのです。耐障害性の場合は、二台目のサーバを立てても、二台目のサーバは一台目が故障するまでじーっと待っている点です。今回は、二台目のサーバはやってくるリクエストを捌きますが、耐障害性は低いです。サーバがひとつ故障すれば、もう片方が全てのリクエストを受け付けることになり、サービスがとても重くなるかサイアクサービスが落ちたりします（どちらもあり得ません）。問題に対する構成はどちらもよく似ていますが、高可用性と耐障害性は違うものだということを覚えておいてください。二つ目のシナリオに少し戻りますが、最初のシナリオでも耐障害性のあるCouchDBシステムを構築する方法を見ます。
 
 <p>Keep in mind that although the solutions look similar, high availability and fault tolerance are not the same. We’ll get back to the second scenario later on, but first we will take a look at how to set up a fault-tolerant CouchDB system.
 
 <p>We already gave it away in the previous chapters: the solution to synchronizing servers is replication.
+<p>とはいえ、前の章でそれは見ましたね： サーバを同期するには レプリケーションします。

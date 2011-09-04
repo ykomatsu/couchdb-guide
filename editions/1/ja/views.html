@@ -11,26 +11,35 @@
 <script src="../../../script.js"></script>
 
 <h2 id="views">Finding Your Data with Views</h2>
+<h2 id="views">ビューでデータを検索する</h2>
 
 <p>Views are useful for many purposes:
+<p>ビューは多くの目的において活躍します。
 
 <ul>
 
 <li>Filtering the documents in your database to find those relevant to a particular process.</li>
+<li>特定の処理のために必要なドキュメントを見つけるために、データベースのドキュメントをフィルタリングする</li>
 
 <li>Extracting data from your documents and presenting it in a specific order.</li>
+<li>ドキュメントからデータを抽出したり指定した順番で表示する</li>
 
 <li>Building efficient indexes to find documents by any value or structure that resides in them.</li>
+<li>ドキュメント内の構造や値でドキュメントを探すために、効果のあるインデックスを構築する</li>
 
 <li>Use these indexes to represent relationships among documents.</li>
+<li>ドキュメント間での関係を示すためにインデックスを利用する</li>
 
 <li>Finally, with views you can make all sorts of calculations on the data in your documents. For example, a view can answer the question of what your company’s spending was in the last week, month, or year.</li>
+<li>最後に、ビューによりドキュメント内のデータにおける計算結果の順番を作ることができます。例えば、あなたの会社の先週、月、年での経費がどうだったかの問いの答えを得ることができます。</li>
 
 </ul>
 
 <h3 id="what">What Is a View?</h3>
+<h3 id="what">ビューとは何か</h3>
 
 <p>Let’s go through the different use cases. First is extracting data that you might need for a special purpose in a specific order. For a front page, we want a list of blog post titles sorted by date. We’ll work with a set of example documents as we walk through how views work:
+<p>いくつかのユースケースを見ていきましょう。まずは、特定の並び順での結果を得る目的を達成するためのデータの抽出です。フロントページでは、日付で並び替えられたブログの投稿タイトルのリストを取得したいとします。どのようにビューが動作するかの予習として、サンプルのドキュメントの動作を確認してみましょう。
 
 <pre>
 {
@@ -62,6 +71,7 @@
 </pre>
 
 <p>Three will do for the example. Note that the documents are sorted by <code>"_id"</code>, which is how they are stored in the database. Now we define a view. <a href="tour.html">Chapter 3, Getting Started</a> showed you how to create a view in Futon, the CouchDB administration client. Bear with us without an explanation while we show you some code:
+<p>上記３つのドキュメントをサンプルとして利用します。ドキュメントが<code>_id</code>で並べられていることに注目してください。それらはデータベース内で並び替えられています。そしてビューを定義します。CouchDBの管理画面である、Futonでどのようにビューを作成するかについては、<a href="tour.html">Chapter 3, Getting Started</a>を参照してください。いくつかのサンプルコードを列挙する中で、説明が無いことについては少しお待ちください。
 
 <pre>
 function(doc) {
@@ -72,14 +82,19 @@ function(doc) {
 </pre>
 
 <p>This is a <em>map function</em>, and it is written in JavaScript. If you are not familiar with JavaScript but have used C or any other C-like language such as Java, PHP, or C#, this should look familiar. It is a simple function definition.
+<p>これは<em>map</em>関数です。JavaScriptで記述します。もしJavaScriptに親しみがなく、CやJava,PHP,C#といった他のCのような言語を使ったことがあるなら、似たようなものに見えるでしょう。いわゆる関数の定義です。
 
 <p>You provide CouchDB with view functions as strings stored inside the <code>views</code> field of a design document. You don’t run it yourself. Instead, when you <em>query your view</em>, CouchDB takes the source code and runs it for you on every document in the database your view was defined in. You <em>query your view</em> to retrieve the <em>view result</em>.
+<p>デザインドキュメントの<coce>view</code>フィールドに格納された文字としてビュー関数を提供します。直接実行する必要はありません。代わりに、ビューを問い合わせたときに、CouchDBがソースコードを取得し、ビューを定義したデータベースの中のすべてのドキュメントに対して実行されます。
 
 <p>All map functions have a single parameter <code>doc</code>. This is a single document in the database. Our map function checks whether our document has a <code>date</code> and a <code>title</code> attribute—luckily, all of our documents have them—and then calls the built-in <code>emit()</code> function with these two attributes as arguments.
+<p>すべてのmap関数は、<code>doc</code>という一つのパラメータを引数にとります。これは、データベースの中の一つのドキュメントを示します。先ほどのサンプルのmap関数はドキュメントが<code>date</code>や<code>title</code>属性を持っているかを確認します。（幸運にも、私たちのドキュメントはそれらを持っていました）そして、組み込みの<code>emit()</code>関数を二つの引数と共に呼び出します。
 
 <p>The <code>emit()</code> function always takes two arguments: the first is <code>key</code>, and the second is <code>value</code>. The <code>emit(key, value)</code> function creates an entry in our <em>view result</em>. One more thing: the <code>emit()</code> function can be called multiple times in the map function to create multiple entries in the view results from a single document, but we are not doing that yet.
+<p><code>emit()</code>関数は常に二つの引数を取ります。一つ目は<code>key</code>で、二つ目は<code>value</code>です。<code>emit(key,value)</code>関数はビューの結果となるエントリーを作ります。もう一つ、<code>emit()</code>関数は、マップ関数の中で複数呼び出すことができます。それにより、一つのドキュメントからビューの結果として複数のエントリーを作成することができます。しかし、まだそれに対しては何もしていません。
 
 <p>CouchDB takes whatever you pass into the <code>emit()</code> function and puts it into a list (see <a href="#table/1">Table 1, “View results”</a>). Each row in that list includes the <code>key</code> and <code>value</code>. More importantly, the list is sorted by <code>key</code> (by <code>doc.date</code> in our case). The most important feature of a view result is that it is sorted by <code>key</code>. We will come back to that over and over again to do neat things. Stay tuned.
+<p>CouchDBは、<code>emit()</code>関数に渡す物は何でも取り、リストへ格納します(参照<a href="#table/1">Table 1, “View results”</a>).リストの中の各行は、<code>key</code>と<code>value</code>を含んでいます。更に重要なこととして、リストは<code>key</code>によってソートされます(例では<code>doc.date</code>です)。ビューの結果の最も重要な機能は、<code>key</code>でソートされるということでしょう。私たちはこれを整頓するために、何度も何度も戻ると思いますが、我慢して聞き続けて下さい。
 
 <div class="figure" id="table/1">
 
@@ -108,10 +123,13 @@ function(doc) {
 </div>
 
 <p>If you read carefully over the last few paragraphs, one part stands out: “When you query your view, CouchDB takes the source code and runs it for you on every document in the database.” If you have a lot of documents, that takes quite a bit of time and you might wonder if it is not horribly inefficient to do this. Yes, it would be, but CouchDB is designed to avoid any extra costs: it only runs through all documents once, when you <em>first</em> query your view. If a document is changed, the map function is only run once, to recompute the keys and values for that single document.
+<p>注意深く一つ前の段落を読んでいたらなら、一カ所 "ビューを問い合わせたときに、CouchDBがソースコードを取得し、ビューを定義したデータベースの中のすべてのドキュメントに対して実行されます。"という部分が気になったのではないでしょうか。沢山のドキュメントを保管していた場合、短い時間で結果を得られるものであって、ものすごく効率の悪い物ではないことを望むでしょう。その通りです。しかし、CouchDBは大きなコストとならないようにデザインされています。ビューを<em>初めて</em>呼び出したときに、すべてのドキュメントに対して一度だけ実行します。もし、ドキュメントが変更された場合は、map関数はその一つのドキュメントに対して、keyとvalueを再計算するため一度だけ実行されます。
 
 <p>The view result is stored in a B-tree, just like the structure that is responsible for holding your documents. View B-trees are stored in their own file, so that for high-performance CouchDB usage, you can keep views on their own disk. The B-tree provides very fast lookups of rows by key, as well as efficient streaming of rows in a key range. In our example, a single view can answer all questions that involve time: “Give me all the blog posts from last week” or “last month” or “this year.” Pretty neat. Read more about how CouchDB’s B-trees work in <a href="btree.html">Appendix F, The Power of B-trees</a>.
+<p>ビューの結果はB-tree内に保管されており、それはドキュメントを保管するための構造です。CouchDBの利用の最適化のため、ビューのB-treeはそれら自身のファイルに保管されており、それら自身のディスクにビューを保管できます。B-treeはkeyでの非常に高速な行の検索を可能にします。keyの範囲での連続した行にも同じように効果的です。私たちの例では、"先週からのすべてのブログの投稿"や"先月, 昨年"といった、時間に関するすべての質問に一つのビューで答えられます。素晴らしいことです。CouchDBのB-treeの動作については<a href="btree.html">Appendix F, The Power of B-trees</a>を参照してください。
 
 <p>When we query our view, we get back a list of all documents sorted by date. Each row also includes the post title so we can construct links to posts. Figure 1 is just a graphical representation of the view result. The actual result is JSON-encoded and contains a little more metadata:
+<p>ビューを問い合わせる時、日付でソートされたすべてのドキュメントを取得します。各行はまた、投稿のタイトルも含んでいるため、投稿へのリンクを作ることができます。Figure 1は、ビューの結果をグラフィカルに表したものです。実際の結果はJSONでエンコードされており、もう少しメタデータを含んでいます。
 
 <pre>
 {
@@ -140,26 +158,37 @@ function(doc) {
 </pre>
 
 <p>Now, the actual result is not as nicely formatted and doesn’t include any superfluous whitespace or newlines, but this is better for you (and us!) to read and understand. Where does that <code>"id"</code> member in the result rows come from? That wasn’t there before. That’s because we omitted it earlier to avoid confusion. CouchDB automatically includes the document ID of the document that created the entry in the view result. We’ll use this as well when constructing links to the blog post pages.
+<p>今、実際の結果はうまく整形されておらず、必要以上の空白や改行を含んでいません。しかし、これはあなた(と私たち!)にとって、読んだり理解するには良い形です。結果の行にある<code>"id"</code>メンバーはどこからきたのでしょうか。前回はありませんでした。それは、混乱を避けるため、省略していたからです。CouchDBはビューの結果にエントリーとして作成されるドキュメントのドキュメントIDを自動的に挿入します。私たちはこれをブログの投稿ページへのリンクを構成する際に利用しています。
 
 <h3 id="lookups">Efficient Lookups</h3>
+<h3 id="lookups">効果的な検索</h3>
 
 <p>Let’s move on to the second use case for views: “building efficient indexes to find documents by any value or structure that resides in them.” We already explained the efficient indexing, but we skipped a few details. This is a good time to finish this discussion as we are looking at map functions that are a little more complex.
+<p>ビューの二つ目の利用例である "あらゆるvalueやそれらに存在する構造から、ドキュメントを検索するために有効なインデックスの構成"に進んでみましょう。私たちは既に効果的なインデックスの作成について説明しましたが、いくつかの詳細については飛ばしていました。もう少し複雑なmap関数を見ていく上での議題を完了させる良い機会です。
 
 <p>First, back to the B-trees! We explained that the B-tree that backs the <code>key</code>-sorted view result is built only once, when you first query a view, and all subsequent queries will just read the B-tree instead of executing the map function for all documents again. What happens, though, when you change a document, add a new one, or delete one? Easy: CouchDB is smart enough to find the rows in the view result that were created by a specific document. It marks them <em>invalid</em> so that they no longer show up in view results. If the document was deleted, we’re good—the resulting B-tree reflects the state of the database. If a document got updated, the new document is run through the map function and the resulting new lines are inserted into the B-tree at the correct spots. New documents are handled in the same way. <a href="btree.html">Appendix F, The Power of B-trees</a> demonstrates that a B-tree is a very efficient data structure for our needs, and the crash-only design of CouchDB databases is carried over to the view indexes as well.
+<p>まず、B-treeに戻ります！<code>key</code>が保管されるビュー結果が、初めてのビューに対する問い合わせのとき一度だけ作られることや、後続の問い合わせが、すべてのドキュメントに対してもう一度map関数を実行する代わりにB-Treeを読み込んでいることに関して、B-treeが支えていることを説明しました。ドキュメントを変更したとき、新しく作ったとき、削除した時に、何が起きているのでしょうか。簡単です、CouchDBは特定のドキュメントによって作られたビューの結果の行を見つけることについて十分にスマートです。CouchDBは、<em>invalid</em>としてマークするため、もはやビューの結果に現れることはありません。もしドキュメントが削除されたら、B-treeの結果はデータベースの状態を反映します。もしドキュメントが更新されたら、新しいドキュメントがmap関数で実行され、新しい結果の行をB-treeの的確な位置に挿入します。新しいドキュメントも同じように扱われます。 <a href="btree.html">Appendix F, The Power of B-trees</a>はB-treeが私たちに必要なデータ構造としてとても効果的であることや、CouchDBのデータベースが良くビューのインデックスを持ち越されるようなcrash-onlyデザインにも効果的であることを実証しています。
 
 <p>To add one more point to the efficiency discussion: usually multiple documents are updated between view queries. The mechanism explained in the previous paragraph gets applied to all changes in the database since the last time the view was queried in a batch operation, which makes things even faster and is generally a better use of your resources.
+<p>もう一つの有効的な議題を加えておきます。通常、複数のドキュメントはビューの複数の要求の間で更新されます。前の段落で説明した構造は、バッチ処理で最後にビューが問い合わせられた時からデータベースでのすべての変更に適用されます。これは幾分かの高速化とリソースの有効利用を作り出します。
 
 <h4 id="one">Find One</h4>
+<h4 id="one">一つを探す</h4>
 
 <p>On to more complex map functions. We said “find documents by any value or structure that resides in them.” We already explained how to extract a value by which to sort a list of views (our <code>date</code> field). The same mechanism is used for fast lookups. The URI to query to get a view’s result is <code>/database/_design/designdocname/_view/viewname</code>. This gives you a list of all rows in the view. We have only three documents, so things are small, but with thousands of documents, this can get long. You can add <em>view parameters</em> to the URI to constrain the result set. Say we know the date of a blog post. To find a single document, we would use <code>/blog/_design/docs/_view/by_date?key="2009/01/30 18:04:11"</code> to get the “Biking” blog post. Remember that you can place whatever you like in the <code>key</code> parameter to the <code>emit()</code> function. Whatever you put in there, we can now use to look up exactly—and fast.
+<p>もう少し複雑なmap関数に進みます。私たちはドキュメントに含まれる値や構造からドキュメントを見つけると言いました。ビューのリストを並び替えるために値をどうやって展開するか説明しました(私たちの例ではdateを用いました)。同じ仕組みが早い検索のために使われています。ビューの結果を得るための問い合わせのURIは<code>/database/_design/designdocname/_view/viewname</code>です。これはビューとして全ての行のリストを返します。私たちは３つしかドキュメントを用意していませんでしたが、ドキュメントが数千もある場合は、沢山の結果を得ることができます。結果の集まりを絞り込むためにURIに<em>ビューパラメータ</em>を追加できます。ブログの投稿の日付を知っていたとします。その一つのドキュメントを探すため、<code>/blog/_design/docs/_view/by_date?key="2009/01/30 18:04:11"</code>を使い"Biking"というブログの投稿を得ることができます。覚えていてください、<code>emit()</code>関数へ<code>key</code>パラメータとして渡したものであれば何でも渡すことが出来ます。
 
 <p>Note that in the case where multiple rows have the same key (perhaps we design a view where the key is the name of the post’s author), key queries can return more than one row.
+<p>同じキーを持った行が複数存在している場合（たとえば、キーをブログのポストの著者としてビューをデザイン）、キーの要求は１行よりも多く返すことになります。
 
 <h4 id="many">Find Many</h4>
+<h4 id="many">多くを探す</h4>
 
 <p>We talked about “getting all posts for last month.” If it’s February now, this is as easy as <code>/blog/_design/docs/_view/by_date?startkey="2010/01/01 00:00:00"&amp;endkey="2010/02/00 00:00:00"</code>. The <code>startkey</code> and <code>endkey</code> parameters specify an inclusive range on which we can search.
+<p>"先月のすべてのポストを取得すること"について述べます。もし、今が2月であれば、これは<code>/blog/_design/docs/_view/by_date?startkey="2010/01/01 00:00:00"&amp;endkey="2010/02/00 00:00:00"</code>と同じ意味です。<code>startkey</code>と<code>endkey</code>パラメータは検索の出来る範囲を指定します。
 
 <p>To make things a little nicer and to prepare for a future example, we are going to change the format of our date field. Instead of a string, we are going to use an array, where individual members are part of a timestamp in decreasing significance. This sounds fancy, but it is rather easy. Instead of:
+<p>より良くするためと次のサンプルのための準備として、データフィールドのフォーマットを変更します。文字列の替わりに、個別の値がタイムスタンプの一部となっている配列を使います。これはとても変に思えますが、とても簡単です。
 
 <pre>
 {
@@ -174,6 +203,7 @@ function(doc) {
 </pre>
 
 <p>Our map function does not have to change for this, but our view result looks a little different. See <a href="#table/2">Table 2, “New view results”</a>.
+<p>私たちのmap関数はこのために変更する必要はありません。しかしビューの結果は少し異なります。a href="#table/2">Table 2, “New view results”</a>を見てください。
 
 <div class="figure" id="table/2">
 
@@ -202,6 +232,7 @@ function(doc) {
 </div>
 
 <p>And our queries change to <code>/blog/_design/docs/_view/by_date?key=[2009, 1, 1, 0, 0, 0]</code> and <code>/blog/_design/docs/_view/by_date?key=[2009, 01, 31, 0, 0, 0]</code>. For all you care, this is just a change in syntax, not meaning. But it shows you the power of views. Not only can you construct an index with scalar values like strings and integers, you can also use JSON structures as keys for your views. Say we tag our documents with a list of tags and want to see all tags, but we don’t care for documents that have not been tagged.
+<p>そして、問い合わせ方法も<code>/blog/_design/docs/_view/by_date?key=[2009, 1, 1, 0, 0, 0]</code>や<code>/blog/_design/docs/_view/by_date?key=[2009, 01, 31, 0, 0, 0]</code>に変更になります。気にすることはありません、文法が変わるだけです。しかし、これはビューのすごさを示しています。インデックスに用いれるのが文字列や数値といったスカラーの値だけでなく、JSONの構造を持った値をビューのキーとして使うことができます。私たちはタグのリストでドキュメントをタグ付けしています。すべてのタグを確認したいという時、タグ付けされていないドキュメントについて扱わないようにしています。
 
 <pre>
 {
@@ -230,22 +261,29 @@ function(doc) {
 </pre>
 
 <p>This shows a few new things. You can have conditions on structure (<code>if(doc.tags.length &gt; 0)</code>) instead of just values. This is also an example of how a map function calls <code>emit()</code> multiple times per document. And finally, you can pass <code>null</code> instead of a value to the <code>value</code> parameter. The same is true for the <code>key</code> parameter. We’ll see in a bit how that is useful.
+<p>この例ではいくつか新しいことを示しています。値を直接使う代わりに構造の状態を使うことができます(<code>if(doc.tags.length &gt; 0)</code>)。これはまた、どのように<code>emit()</code>を一つのドキュメントで複数回呼ぶかのmap関数の例でもあります。そして最後に、<code>value</code>パラメータへの値の代わりに<code>null</code>を渡すことができます。<code>key</code>パラメータにも使えます。それが普通であることを目の当たりにするでしょう。
 
 <h4 id="reversed">Reversed Results</h4>
+<h4 id="reversed">予約された結果</h4>
 
 <p>To retrieve view results in reverse order, use the <code>descending=true</code> query parameter. If you are using a <code>startkey</code> parameter, you will find that CouchDB returns different rows or no rows at all. What’s up with that?
+<p>逆順でビューの結果を収集したい時、<code>descending=true</code>クエリパラメータを使えます。もし、<code>startkey</code>パラメータを使っている場合、CouchDBは異なる行を戻すか、何も行が無いように動作するでしょう。これはどうゆうことでしょうか？
 
 <p>It’s pretty easy to understand when you see how view query options work under the hood. A view is stored in a tree structure for fast lookups. Whenever you query a view, this is how CouchDB operates:
+<p>あなたがどのようにビュークエリのオプションが特性のもとで動作するかを見ることで、理解するととても簡単です。
 
 <ol>
 
 <li>Starts reading at the top, or at the position that <code>startkey</code> specifies, if present.</li>
+<li>もし存在していれば、先頭または<code>startkey</code>で指定している場所をを読み始めます。</li>
 
 <li>Returns one row at a time until the end or until it hits <code>endkey</code>, if present.</li>
+<li>もし存在していれば、最後までまたは<code>endkey</code>に行き着くまで一度に一行ずつ戻します。</li>
 
 </ol>
 
 <p>If you specify <code>descending=true</code>, the reading direction is reversed, <em>not</em> the sort order of the rows in the view. In addition, the same two-step procedure is followed.
+<p>もし、<code>descending=true</code>を指定する場合、読み込みの方向が逆転され、ビューにおける行のソートをしません。加えて、同じ２ステップの操作は以下の通りです。
 
 <p>Say you have a view result that looks like this:
 
@@ -274,6 +312,7 @@ function(doc) {
 </div>
 
 <p>Here are potential query options: <code>?startkey=1&amp;descending=true</code>. What will CouchDB do? See #1 above: it jumps to <code>startkey</code>, which is the row with the key <code>1</code>, and starts reading backward until it hits the end of the view. So the particular result would be:
+<p>ここには潜在的なクエリオプションの<code>?startkey=1&amp;descending=true</code>があります。CouchDBは何をするのでしょうか？上の#1を見てください。<code>startkey</code>はkeyが<code>1</code>となる行へ移動します。そして、ビューの終わりがくるまで後ろ向きに読み込みを開始します。それによって得られる結果は以下です。
 
 <div>
 
@@ -298,6 +337,7 @@ function(doc) {
 </div>
 
 <p>This is very likely not what you want. To get the rows with the indexes <code>1</code> and <code>2</code> in reverse order, you need to switch the <code>startkey</code> to <code>endkey</code>: <code>endkey=1&amp;descending=true</code>:
+<p>これはあなたが欲しいと思うものではなく、インデックスが<code>1</code>と<code>2</code>の行を逆順として取得するためには、<code>startkey</code>を<code>endkey</code>に入れ替えることが必要です。<code>endkey=1&amp;descending=true</code>とする必要があります。
 
 <div>
 
@@ -322,12 +362,17 @@ function(doc) {
 </div>
 
 <p>Now that looks a lot better. CouchDB started reading at the bottom of the view and went backward until it hit <code>endkey</code>.
+<p>少し良くなったように見えます。CouchDBはビューの底を読み始めて、<code>endkey</code>に行き着くまで戻っていきます。
 
 <h3 id="comments">The View to Get Comments for Posts</h3>
+<h3 id="comments">投稿に対するコメントを得るためのビュー</h3>
 
 <p>We use an array key here to support the <code>group_level</code> reduce query parameter. CouchDB’s views are stored in the B-tree file structure (which will be described in more detail later on). Because of the way B-trees are structured, we can cache the intermediate reduce results in the non-leaf nodes of the tree, so reduce queries can be computed along arbitrary key ranges in logarithmic time. See <a href="#figure/1">Figure 1, “Comments map function”</a>.
+<p>ここでは、<code>group_level</code>というreduceのクエリパラメータを利用するために配列のキーを使います。CouchDBのビューはB-treeのファイル構造に保管されています（これについてはまた後で詳しく述べます）。B-treeが構造化されているため、treeの葉ではないノードで中間reduceの結果をキャッシュすることができます。そのため、reduceの問い合わせは、対数時間内で任意のキーの範囲で算出されます。
+
 
 <p>In the blog app, we use <code>group_level</code> reduce queries to compute the count of comments both on a per-post and total basis, achieved by querying the same view index with different methods. With some array keys, and assuming each key has the value <code>1</code>:
+<p>ブログのアプリケーションの中で、異なる方法で同じビューインデックスを問い合わせることで得られる投稿毎や全体でのコメントの数を算出するために私たちは<code>group_level</code>をreduceの問い合わせで使います。以下のような同じ配列のキーで、それぞれのキーが値<code>1</code>となっていると仮定します。
 
 <pre>
 ["a","b","c"]
@@ -338,6 +383,7 @@ function(doc) {
 </pre>
 
 <p>the reduce view:
+<p>reduceビューを以下のように仮定します。
 
 <pre>
 function(keys, values, rereduce) {
@@ -346,6 +392,7 @@ function(keys, values, rereduce) {
 </pre>
 
 <p>returns the total number of rows between the start and end key. So with <code>startkey=["a","b"]&amp;endkey=["b"]</code> (which includes the first three of the above keys) the result would equal <code>3</code>. The effect is to count rows. If you’d like to count rows without depending on the row value, you can switch on the <code>rereduce</code> parameter:
+<p>開始と終了のキーまでの間で得られる行の合計数が返されます。たとえば<code>startkey=["a","b"]&amp;endkey=["b"]</code>（上記のキーのはじめの三つを対象としている）の結果は<code>3</code>となります。行数をカウントすることが目的です。もし、行の値に依存することなく行数を数えたいなら、<code>rereduce</code>パラメータに渡すことができます。
 
 <pre>
 function(keys, values, rereduce) {
@@ -366,8 +413,10 @@ function(keys, values, rereduce) {
 </div>
 
 <p>This is the reduce view used by the example app to count comments, while utilizing the map to output the comments, which are more useful than just <code>1</code> over and over. It pays to spend some time playing around with map and reduce functions. Futon is OK for this, but it doesn’t give full access to all the query parameters. Writing your own test code for views in your language of choice is a great way to explore the nuances and capabilities of CouchDB’s incremental MapReduce system.
+<p>これは、コメントを出力するmapに対してコメント数を数えるためにサンプルのアプリケーションで使われているreduceビューで、何度も使います。mapとreduce関数まわりの動作を何度か使います。Futonはこれに対していい選択です。しかし、すべてのクエリパラメータを使用することができません。あなたが好きな言語で、viewのテストコードを記述することはCouchDBのインクリメンタルなMapReduceシステムのニュアンスや機能知るためのよい方法です。
 
 <p>Anyway, with a <code>group_level</code> query, you’re basically running a series of reduce range queries: one for each <em>group</em> that shows up at the <em>level</em> you query. Let’s reprint the key list from earlier, grouped at level <code>1</code>:
+<p>いずれの場合も、<code>group_level</code>クエリを利用することで、指定した<em>レベル</em>での<em>グループ</em>に対する一連のreduceの範囲問い合わせを実行します。それでは、レベルを<code>1</code>とした場合のグループを、前の例に適用してキーのリストを書いてみましょう。
 
 <pre>
 ["a"]   3
@@ -375,6 +424,7 @@ function(keys, values, rereduce) {
 </pre>
 
 <p>And at <code>group_level=2</code>:
+<p><code>group_level=2</code>の場合はこのようになります。
 
 <pre>
 ["a","b"]   2
@@ -383,12 +433,15 @@ function(keys, values, rereduce) {
 </pre>
 
 <p>Using the parameter <code>group=true</code> makes it behave as though it were <code>group_level=Exact</code>, so in the case of our current example, it would give the number 1 for each key, as there are no exactly duplicated keys.
+<p><code>group=true</code>パラメータは、<code>group_level=Exact</code>と同じ振る舞いをします。よって現在のサンプルの場合で考えると、厳密に重複するキーは存在しないことになり、キーそれぞれに1を設定します。
 
 <h3 id="reduce">Reduce/Rereduce</h3>
 
 <p>We briefly talked about the <code>rereduce</code> parameter to your reduce function. We’ll explain what’s up with it in this section. By now, you should have learned that your view result is stored in B-tree index structure for efficiency. The existence and use of the <code>rereduce</code> parameter is tightly coupled to how the B-tree index works.
+<p>reduce関数でのrereduceパラメータについて簡潔に紹介しました。このセクションではそれが何なのか説明します。さて、ビューの結果が能率のためにB-treeのインデックス構造で保管されていることを思い出して下さい。<code>rereduce</code>パラメータの存在と利用はB-treeのインデックスの動作と密接に関連しています。
 
 <p>Consider the map result shown in <a href="#example/1">Example 1, “Example view result (mmm, food)”</a>.
+<p>mapの結果が<a href="#example/1">Example 1, “Example view result (mmm, food)”</a>で表されているものとします。
 
 <div id="example/1" class="figure">
 
@@ -412,6 +465,7 @@ function(keys, values, rereduce) {
 </div>
 
 <p>When we want to find out how many dishes there are per origin, we can reuse the simple reduce function shown earlier:
+<p>それぞれの種類毎にどのくらい必要かを探したい場合、前に使った単純なreduce関数を再度使うことができます。
 
 <pre>
 function(keys, values, rereduce) {
@@ -420,6 +474,7 @@ function(keys, values, rereduce) {
 </pre>
 
 <p><a href="#figure/2">Figure 2, “The B-tree index”</a> shows a simplified version of what the B-tree index looks like. We abbreviated the key strings.
+<p><a href="#figure/2">Figure 2, “The B-tree index”</a>はB-treeのインデックスがどのように見えるかを簡潔に表したものです。キーの文字列は省略しています。
 
 <div class="figure" id="figure/2">
 
@@ -430,12 +485,16 @@ function(keys, values, rereduce) {
 </div>
 
 <p>The view result is what computer science grads call a “pre-order” walk through the tree. We look at each element in each node starting from the left. Whenever we see that there is a subnode to descend into, we descend and start reading the elements in that subnode. When we have walked through the entire tree, we’re done.
+<p>ビューの結果はいわゆるコンピュータサイエンスでいう"プリオーダー"で木を巡回します。左側の枝の要素から見始めます。その下に枝があるような要素を見る場合は、下に下がりその枝の要素を読み始めます。木全体を巡回しおわったら完了です。
 
 <p>You can see that CouchDB stores both keys and values inside each leaf node. In our case, it is simply always <code>1</code>, but you might have a value where you count other results and then all rows have a different value. What’s important is that CouchDB runs all elements that are within a node into the reduce function (setting the <code>rereduce</code> parameter to <code>false</code>) and stores the result inside the parent node along with the edge to the subnode. In our case, each edge has a <code>3</code> representing the reduce value for the node it points to.
+<p>CouchDBがキーと値両方をそれぞれの葉に持っていることが分かります。私たちのケースの場合、それは単純に常に<code>1</code>です。しかし、あなたの場合は他の結果をカウントした値を持っていて、すべての行が異なる値になっているかもしれません。重要なことは、CouchDBはreduce関数（<code>rereduce</code>パラメータを<code>false</code>として設定している）へ入ってくるノードのすべての要素を実行し、結果をサブノードの節にある親ノードへ保管します。私たちのケースでは、それぞれの節は、その節が持つノードのreduceの値を代表して<code>3</code>を持っています。
 
 <p>In reality, nodes have more than 1,600 elements in them. CouchDB computes the result for all the elements in multiple iterations over the elements in a single node, not all at once (which would be disastrous for memory consumption).
+<p>実際には、ノードは1600以上もの要素を持っています。CouchDBは一つのノードの要素に対する複数の繰り返しの中でのすべての要素の結果を計算します。一度にすべてを実行しません。（一度に実行するとメモリ消費の問題になるでしょう）
 
 <p>Now let’s see what happens when we run a query. We want to know how many <code>"chinese"</code> entries we have. The query option is simple: <code>?key="chinese"</code>. See <a href="#figure/3">Figure 3, “The B-tree index reduce result”</a>.
+<p>では、問い合わせを実行したときに何が起きるか見てみましょう。私たちが持っている結果から<code>"chinese"</code>がどれくらいあるか知りたいとします。問い合わせのオプションは単純に<code>?key="chinese"</code>です。<a href="#figure/3">Figure 3, “The B-tree index reduce result”</a>を見て下さい。
 
 <div class="figure" id="figure/3">
 
@@ -446,8 +505,10 @@ function(keys, values, rereduce) {
 </div>
 
 <p>CouchDB detects that all values in the subnode include the <code>"chinese"</code> key. It concludes that it can take just the <code>3</code> value associated with that node to compute the final result. It then finds the node left to it and sees that it’s a node with keys outside the requested range (<code>key=</code> requests a range where the beginning and the end are the same value). It concludes that it has to use the <code>"chinese"</code> element’s value and the other node’s value and run them through the reduce function with the <code>rereduce</code> parameter set to <code>true</code>.
+<p>CouchDBは<code>"chinese"</code>を含むサブノードにあるすべての値を検出します。それは、<code>3</code>を最終結果を計算するためのノードに関連する値として取ることができることを意味しています。それから、ノードの左にそれを探しに行き、要求された範囲（<code>key=</code>は開始と終わりが同じあたいであるような範囲を要求します）の外のキーを持つノードであるかを見ます。そして、<code>"chinese"</code>要素の値や他のノードの値を利用し、reduce関数に<code>rereduce</code>パラメータを<code>true</code>に設定して実行します。
 
 <p>The reduce function effectively calculates <code>3 + 1</code> on query time and returns the desired result. <a href="#example/2">Example 2, “The result is 4”</a> shows some pseudocode that shows the last invocation of the reduce function with actual values.
+<p>reduce関数は要求時間で、効率よく<code>3 + 1</code>を計算します。そして、望んだ結果を返します。<a href="#example/2">Example 2, “The result is 4”</a>は擬似的なコードで、reduce関数の実際の値での最後の引数を示しています。
 
 <div class="figure" id="example/2">
 
@@ -462,6 +523,7 @@ function(null, [3, 1], true) {
 </div>
 
 <p>Now, we said your reduce function must actually reduce your values. If you see the B-tree, it should become obvious what happens when you don’t reduce your values. Consider the following map result and reduce function. This time we want to get a list of all the unique labels in our view:
+<p>reduce関数は実際に値を集約しなければいけないと言いました。もし、B-treeを見たいなら、値を集約しないときに起こる結果で明白になるでしょう。以下のmapの結果とreduce関数を考えて下さい。ここでは、ビューとしてユニークなラベルの一覧を取得したいとします。
 
 <pre>
 "abc", "afrikan"
@@ -479,6 +541,7 @@ function(null, [3, 1], true) {
 </pre>
 
 <p>We don’t care for the key here and only list all the labels we have. Our reduce function removes duplicates; see <a href="#example/3">Example 3, “Don’t use this, it’s an example broken on purpose”</a>.
+<p>ここではキーは気にせずにすべてのラベルの一覧だけ気にします。reduce関数では重複を削除します。<a href="#example/3">Example 3, “Don’t use this, it’s an example broken on purpose”</a>を見て下さい。
 
 <div class="figure" id="example/3">
 
@@ -500,12 +563,16 @@ function(keys, values, rereduce) {
 </div>
 
 <p>This translates to <a href="#figure/4">Figure 4, “An overflowing reduce index”</a>.
+<p>これは<a href="#figure/4">Figure 4, “An overflowing reduce index”</a>に変換します。
 
 <p>We hope you get the picture. The way the B-tree storage works means that if you don’t actually reduce your data in the reduce function, you end up having CouchDB copy huge amounts of data around that grow linearly, if not faster with the number of rows in your view.
+<p>概要をつかめることを願っています。B-tree領域は、もし実際にreduce関数でデータを集約しない場合、CouchDBは線形的に増える大量のデータをコピーして終わることになります。
 
 <p>CouchDB will be able to compute the final result, but only for views with a few rows. Anything larger will experience a ridiculously slow view build time. To help with that, CouchDB since version 0.10.0 will throw an error if your reduce function does not reduce its input values.
+<p>CouchDBは最終的な結果を計算することができますが、いくつかの行のビューだけを計算します。大量な場合は、ビューの作成にとてつもなく時間がかかることになります。これを助けるために、0.10.0以降のCouchDBでは、reduce関数が入力値を集約しない場合にエラーを返します。
 
 <p>See <a href="cookbook.html">Chapter 21, View Cookbook for SQL Jockeys</a> for an example of how to compute unique lists with views.
+<p><a href="cookbook.html">Chapter 21, View Cookbook for SQL Jockeys</a>はビューでユニークなリストをどう生成するかの例です。
 
 <div class="figure" id="figure/4">
 
@@ -516,29 +583,41 @@ function(keys, values, rereduce) {
 </div>
 
 <h4 id="lessons">Lessons Learned</h4>
+<h4 id="lessons">おさらい</h4>
 
 <ul>
 
 <li>If you don’t use the key field in the map function, you are probably doing it wrong.</li>
+<li>もしmap関数でキーを使わないなら、多分それは間違っています。</li>
 
 <li>If you are trying to make a list of values unique in the reduce functions, you are probably doing it wrong.</li>
+<li>もしreduce関数でユニークな値のリストを作成することを試みているなら、多分それは間違っています。</li>
 
 <li>If you don’t reduce your values to a single scalar value or a small fixed-sized object or array with a fixed number of scalar values of small sizes, you are probably doing it wrong.</li>
+<li>もし一つのスカラ値や小さなサイズのオブジェクト、小さなサイズのスカラ値の配列の値をreduceしないなら、多分それは間違っています。</li>
 
 </ul>
 
 <h3 id="wrap">Wrapping Up</h3>
+<h3 id="wrap">まとめ</h3>
 
 <p><em>Map functions</em> are side effect–free functions that take a document as argument and emit key/value pairs. CouchDB stores the <em>emitted rows</em> by constructing a sorted B-tree index, so row lookups by key, as well as streaming operations across a range of rows, can be accomplished in a small memory and processing footprint, while writes avoid seeks. Generating a view takes <code>O(N)</code>, where <code>N</code> is the total number of rows in the view. However, querying a view is very quick, as the B-tree remains shallow even when it contains many, many keys.
+<p><em>Map関数</em>は引数としてのドキュメントやkey/valueのペアの出力を取る副作用の無い関数です。CouchDBはB-treeのインデックスで並び替えて構成し、<em>出力された行</em>を保管します。そして行の範囲に対しての操作のような行の参照にキーを利用します。これにより、探し出すこを避けて書き込むことで少ないメモリと処理で完了できます。ビューの生成は<code>O(N)</code>オーダーで、<code>N</code>はビューの全体の行数です。しかし、B-treeは沢山のキーを含んでいるときでも依然として浅いため、ビューの要求はとても早いです。
 
 <p><em>Reduce functions</em> operate on the sorted rows emitted by map view functions. CouchDB’s reduce functionality takes advantage of one of the fundamental properties of B-tree indexes: for every leaf node (a sorted row), there is a chain of internal nodes reaching back to the root. Each leaf node in the B-tree carries a few rows (on the order of tens, depending on row size), and each internal node may link to a few leaf nodes or other internal nodes.
+<p><em>Reduce関数</em>はmap関数が出力され並び替えられた行を操作します。CouchDBのreduceの機能は基本的なB-treeインデックスの属性の一つとしての特性を持っています。B-treeでのそれぞれの葉ノード（昇順の行）で、根に戻るための内部的なノードの繋がりがあります。B-treeの葉ノードはいくつかの行を持っています（10のオーダーで、行のサイズに依存します）、そして、各中間ノードはいくつかの葉ノードや他の中間ノードに繋がっています。
 
 <p>The reduce function is run on every node in the tree in order to calculate the final reduce value. The end result is a reduce function that can be incrementally updated upon changes to the map function, while recalculating the reduction values for a minimum number of nodes. The initial reduction is calculated once per each node (inner and leaf) in the tree.
+<p>reduce関数は、最終的なreduceの値を計算するための木のすべてのノードで動作します。最後の結果は増加的にアップデート可能なreduce関数で、ノードの最小数に対して換算値を再計算しながら、map関数を変更します。最初の換算はtreeの各ノード（中間や葉）に対し一度計算されます。
 
 <p>When run on leaf nodes (which contain actual map rows), the reduce function’s third parameter, <code>rereduce</code>, is false. The arguments in this case are the keys and values as output by the map function. The function has a single returned reduction value, which is stored on the inner node that a working set of leaf nodes have in common, and is used as a cache in future reduce calculations.
+<p>葉ノード（実際のmapの行を含む）で動作するとき、reduce関数の三つ目のパラメータである<code>rereduce</code>はfalseになります。この場合の引数はmap関数によって出力されたキーと値です。共通した葉ノードの集まりで今後のreduceの計算でキャッシュとして利用される中間ノードに保管された換算値を一つ戻します。
 
 <p>When the reduce function is run on inner nodes, the <code>rereduce</code> flag is <code>true</code>. This allows the function to account for the fact that it will be receiving its own prior output. When <code>rereduce</code> is <code>true</code>, the values passed to the function are intermediate reduction values as cached from previous calculations. When the tree is more than two levels deep, the rereduce phase is repeated, consuming chunks of the previous level’s output until the final reduce value is calculated at the root node.
+<p>reduce関数が中間ノードで動作する時、<code>rereduce</code>フラグは<code>true</code>となります。これはreduce関数自身が前に出力したものを受け取り、本当に得たいものを明らかにすることを可能にします。<code>rereduce</code>が<code>true</code>の時、関数に渡された値は前回の計算からキャッシュされた中間の値となります。木が２レベルより深い場合、rereduceは繰り返され、根ノードでの最終的なreduceの値が計算されるまで一つ前のレベルの結果を消費していきます。
 
 <p>A common mistake new CouchDB users make is attempting to construct complex aggregate values with a reduce function. Full reductions should result in a scalar value, like <code>5</code>, and not, for instance, a JSON hash with a set of unique keys and the count of each. The problem with this approach is that you’ll end up with a very large final value. The number of unique keys can be nearly as large as the number of total keys, even for a large set. It is fine to combine a few scalar calculations into one reduce function; for instance, to find the total, average, and standard deviation of a set of numbers in a single function.
+<p>CouchDBの利用者が作るよくあるミスは複雑に関連のある値をreduce関数で組み立てようとすることです。完全な換算は<code>5</code>のようなスカラ値や例えばユニークなキーやカウントした値の集合のJSONハッシュになるでしょう。このアプローチでの問題は最終的な値がとても大きくなって終わることです。大きな集合であれば、ユニークなキーの数は全体のキーの数と同じくらいになります。いくつかのスカラーの計算を一つのreduce関数に集約することは良い方法です。例えば、一つの関数の中で数値の集まりから合計値、平均値や標準偏差を見つけるためなどです。
 
 <p>If you’re interested in pushing the edge of CouchDB’s incremental reduce functionality, have a look at <a href="http://labs.google.com/papers/sawzall.html">Google’s paper on Sawzall</a>, which gives examples of some of the more exotic reductions that can be accomplished in a system with similar constraints.
+<p>もしCouchDBのインクリメンタルなreduce機能の進んだ利用に興味があるようであれば、<a href="http://labs.google.com/papers/sawzall.html">Google’s paper on Sawzall</a>を見て下さい。そこれでは似たような状態のシステムで、更なる魅力的な換算の方法の例が取り上げられています。

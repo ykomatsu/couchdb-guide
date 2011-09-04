@@ -11,84 +11,108 @@
 <script src="../../../script.js"></script>
 
 <h2 id="api">The Core API</h2>
+<h2 id="api">コアAPI</h2>
 
 <p>This chapter explores the CouchDB in minute detail. It shows all the nitty-gritty and clever bits. We show you best practices and guide you around common pitfalls.
+<p>この章では、CouchDBの大事なところを中心に、ベストプラクティスやよくある落とし穴を説明します。少し細かい内容となります。
 
 <p>We start out by revisiting the basic operations we ran in the last chapter, looking behind the scenes. We also show what Futon needs to do behind its user interface to give us the nice features we saw earlier.
+<p>まずは前章での基本的な操作を復習しながら、その背後で何が起きているかを見ていきましょう。また、Futonのユーザーインターフェイスの背後で何が起きているかをみれば、これまで見てきたCouchDBの素敵な特徴がみえてくることでしょう。
 
 <p>This chapter is both an introduction to the core CouchDB API as well as a reference. If you can’t remember how to run a particular request or why some parameters are needed, you can always come back here and look things up (we are probably the heaviest users of this chapter).
+<p>この章は、CouchDBのコアAPIの入門ですが、リファレンスにもなります。もし、リクエストの出し方や、そのパラメータが必要な理由を覚えられなくても、ここに戻って見直せば思い出せるでしょう（多分、私たちがこの章の一番のヘビーユーザーでしょう）。
 
 <p>While explaining the API bits and pieces, we sometimes need to take a larger detour to explain the reasoning for a particular request. This is a good opportunity for us to tell you why CouchDB works the way it does.
+<p>APIを説明しようとするときに、リクエストを理解するために回り道の説明が必要になるかもしれません。しかし、これもCouchDBの動作を理解するためのよい機会となるでしょう。
 
 <p>The API can be subdivided into the following sections. We’ll explore them individually:
+<p>APIはいくつかのセクションに分けることができます。順にみていきましょう：
 
 <ul>
 
 <li>Server</li>
+<li>サーバ</li>
 
 <li>Databases</li>
+<li>データベース</li>
 
 <li>Documents</li>
+<li>ドキュメント</li>
 
 <li>Replication</li>
+<li>レプリケーション</li>
 
 </ul>
 
 <h3 id="server">Server</h3>
+<h3 id="server">サーバ</h3>
 
 <p>This one is basic and simple. It can serve as a sanity check to see if CouchDB is running at all. It can also act as a safety guard for libraries that require a certain version of CouchDB. We’re using the <code>curl</code> utility again:
+<p>これは基本となるAPIで、とてもシンプルです。CouchDBが正常に動いているかどうかのヘルスチェックに使います。特定のバージョンのCouchDBが必要なライブラリには、バージョンなどの安全性チェックにも使えるでしょう。またcurlを使います：::
 
 <pre>
 curl http://127.0.0.1:5984/
 </pre>
 
 <p>CouchDB replies, all excited to get going:
+<p>CouchDBは元気に返事してくれます：
 
 <pre>
 {"couchdb":"Welcome","version":"0.10.1"}
 </pre>
 
 <p>You get back a JSON string, that, if parsed into a native object or data structure of your programming language, gives you access to the welcome string and version information.
+<p>JSON文字列を受け取って、あなたのプログラミング言語のネイティブオブジェクトやデータ構造に変換して、ようこそ文やバージョンを表示するのに使うことができます。
 
 <p>This is not terribly useful, but it illustrates nicely the way CouchDB behaves. You send an HTTP request and you receive a JSON string in the HTTP response as a result.
+<p>これがとても便利ということはありませんが、HTTPリクエストを送って、JSON文字列が入ったHTTPレスポンスを受け取るという、CouchDBの基本的な振る舞いが端的に現れています。
 
 <h3 id="databases">Databases</h3>
+<h3 id="databases">データベース</h3>
 
 <p>Now let’s do something a little more useful: create databases. For the strict, CouchDB is a <em>database management system</em> (DMS). That means it can hold multiple <em>databases</em>. A database is a bucket that holds “related data.” We’ll explore later what that means exactly. In practice, the terminology is overlapping—often people refer to a DMS as “a database” and also a database within the DMS as “a database.” We might follow that slight oddity, so don’t get confused by it. In general, it should be clear from the context if we are talking about the whole of CouchDB or a single database within CouchDB.
+<p>さて、もう少し実用的なことをしてみましょう。データベースを作成します。厳密には、CouchDBはデータベース管理システム（DMS）です。これは、CouchDBはデータベースを複数保持することができるということを意味します。データベースは「関連するデータ」を保持するバケツです。これが正確には何を意味するのか、ということについては後で見ていきます。実際には、この専門用語は重なりあっています。人々はしばしばDMSのことを「データベース」と言いますし、DMSの中のデータベースを「データベース」とも言います。私たちがこのような少し奇妙な言い回しに従うことがあるかも知れませんが、それによって混乱しないようにしてください。一般的には、CouchDB全体について話をしている場合や、CouchDBの中のひとつのデータベースについて話をしている場合には文脈から明らかでしょう。
 
 <p>Now let’s make one! We want to store our favorite music albums, and we creatively give our database the name <code>albums</code>. Note that we’re now using the <code>-X</code> option again to tell <code>curl</code> to send a <code>PUT</code> request instead of the default <code>GET</code> request:
+<p>さて、ひとつ作ってみましょう！私たちはお気に入りの音楽アルバムを保存したいと思います。独創的に、データベースの名前はalbumsとします。今、curlがデフォルトのGETリクエストの代わりにPUTリクエストを送信するように、-Xオプションをまた使っていることに注意してください。
 
 <pre>
 curl -X PUT http://127.0.0.1:5984/albums
 </pre>
 
 <p>CouchDB replies:
+<p>CouchDBは次のように返答します。:
 
 <pre>
 {"ok":true}
 </pre>
 
 <p>That’s it. You created a database and CouchDB told you that all went well. What happens if you try to create a database that already exists? Let’s try to create that database again:
+<p>これだけです。あなたはデータベースを作成し、CouchDBはすべてがうまくいったことを知らせます。もし、既に存在するデータベースを作成しようとしたら、何が起きるでしょうか。もう一度このデータベースを作ってみましょう。
 
 <pre>
 curl -X PUT http://127.0.0.1:5984/albums
 </pre>
 
 <p>CouchDB replies:
+<p>CouchDBは次のように返答します。
 
 <pre>
 {"error":"file_exists","reason":"The database could not be created, the file already exists."}
 </pre>
 
 <p>We get back an error. This is pretty convenient. We also learn a little bit about how CouchDB works. CouchDB stores each database in a single file. Very simple. This has some consequences down the road, but we’ll skip the details for now and explore the underlying storage system in <a href="btree.html">Appendix F, The Power of B-trees</a>.
+<p>エラーが返ってきました。これはかなり便利です。CouchDBがどのように動作しているのかについて、少し学習します。CouchDBは各データベースをひとつのファイルに保存します。非常に単純です。このことは、将来的にいくつかの結果をもたらしますが、今のところ詳細は飛ばして、基礎となるストレージシステムは「付録F 強力なB木」で探索します。
 
 <p>Let’s create another database, this time with <code>curl</code>’s <code>-v</code> (for “verbose”) option. The verbose option tells <code>curl</code> to show us not only the essentials—the HTTP response body—but all the underlying request and response details:
+<p>もうひとつ、データベースを作りましょう。今度はcurlの-vオプション（「verbose」の意）を使います。この冗長オプションを使うと、curlはHTTPレスポンスの本文のような重要な情報以外の、基礎となるすべてのリクエストとレスポンスの詳細を表示します。
 
 <pre>
 curl -vX PUT http://127.0.0.1:5984/albums-backup
 </pre>
 
 <p><code>curl</code> elaborates:
+<p><code>curl</code>は詳しく説明します。
 
 <pre>
 * About to connect() to 127.0.0.1 port 5984 (#0)
@@ -112,12 +136,14 @@ curl -vX PUT http://127.0.0.1:5984/albums-backup
 </pre>
 
 <p>What a mouthful. Let’s step through this line by line to understand what’s going on and find out what’s important. Once you’ve seen this output a few times, you’ll be able to spot the important bits more easily.
+<p>何て長い言葉でしょう。何が起きているかを理解し、重要なことを見付けるために、一行づつ追ってみましょう。この出力を何度か見れば、あなたはより簡単に重要な部分を見付けることができるようになるでしょう。
 
 <pre>
 * About to connect() to 127.0.0.1 port 5984 (#0)
 </pre>
 
 <p>This is <code>curl</code> telling us that it is going to establish a <em>TCP</em> connection to the CouchDB server we specified in our request URI. Not at all important, except when debugging networking issues.
+<p>これは、curlがリクエストURIで指定したCouchDBサーバーへのTCP接続を確立しようとしていることを示しています。まったく重要ではありませんが、ネットワークの問題をデバッグしているときは別です。
 
 <pre>
 *   Trying 127.0.0.1... connected
@@ -125,94 +151,115 @@ curl -vX PUT http://127.0.0.1:5984/albums-backup
 </pre>
 
 <p><code>curl</code> tells us it successfully connected to CouchDB. Again, not important if you aren’t trying to find problems with your network.
+<p>curlがCouchDBに正常に接続したことを示しています。繰り返しますが、あなたがネットワークについての問題を見付けようとしているのでなければ、重要ではありません。
 
 <p>The following lines are prefixed with <code>&gt;</code> and <code>&lt;</code> characters. <code>&gt;</code> means the line was sent to CouchDB verbatim (without the actual <code>&gt;</code>). <code>&lt;</code> means the line was sent back to <code>curl</code> by CouchDB.
+<p>次の行は、<code>&gt;</code>と<code>&lt;</code>という文字で始まります。<code>&gt;</code>は、その行が（実際の>を除いて）そのままの形でCouchDBに送信されたということを意味します。<code>&lt;</code>はその行がCouchDBからcurlに送り返されたということを意味します。
+
 
 <pre>
 &gt; PUT /albums-backup HTTP/1.1
 </pre>
 
 <p>This initiates an HTTP request. Its <em>method</em> is <code>PUT</code>, the <em>URI</em> is <code>/albums-backup</code>, and the HTTP version is <code>HTTP/1.1</code>. There is also <code>HTTP/1.0</code>, which is simpler in some cases, but for all practical reasons you should be using <code>HTTP/1.1</code>.
+<p>これは、HTTPリクエストを開始しています。そのメソッドはPUTで、URIは/albums-backup、そしてHTTPバージョンはHTTP/1.1です。場合によってはより単純になるHTTP/1.0もありますが、すべての実用的な理由からは、HTTP/1.1を使うべきです。
 
 <p>Next, we see a number of <em>request headers</em>. These are used to provide additional details about the request to CouchDB.
+<p.次に、いくつかのリクエストヘッダーを見ます。これらは、CouchDBへのリクエストについての追加の詳細を提供するために使われます。
 
 <pre>
 &gt; User-Agent: curl/7.16.3 (powerpc-apple-darwin9.0) libcurl/7.16.3 OpenSSL/0.9.7l zlib/1.2.3
 </pre>
 
 <p>The <code>User-Agent</code> header tell CouchDB which piece of client software is doing the HTTP request. We don’t learn anything new: it’s <code>curl</code>. This header is often useful in web development when there are known errors in client implementations that a server might want to prepare the response for. It also helps to determine which platform a user is on. This information can be used for technical and statistical reasons. For CouchDB, the <code>User-Agent</code> header is irrelevant.
+<p.User-Agentヘッダーは、CouchDBに、どのようなクライアントソフトウェアがHTTPリクエストを送信してきたのかを知らせます。新しく学習することは何もありません。curlです。このヘッダーは、ウェブ開発で、サーバーがそのためにレスポンスを準備する必要のあるようなクライアントの実装における既知のエラーが存在するときにしばしば便利です。また、これはユーザーがどのプラットフォームを使用しているのかを明らかにするために役立ちます。この情報は技術的、統計的な理由で使用することができます。CouchDBにとっては、User-Agentヘッダーは関係がありません。
 
 <pre>
 &gt; Host: 127.0.0.1:5984
 </pre>
 
 <p>The <code>Host</code> header is required by HTTP 1.1. It tells the server the hostname that came with the request.
+<p>HostヘッダーはHTTP 1.1のために必要です。これは、リクエストとともに来たホスト名をサーバーに知らせます。
 
 <pre>
 &gt; Accept: */*
 </pre>
 
 <p>The <code>Accept</code> header tells CouchDB that <code>curl</code> accepts any media type. We’ll look into why this is useful a little later.
+<p>AcceptヘッダーはCouchDBに、curlがどんなメディアタイプでも受け取ることを知らせます。少し後に、何故これが便利なのかを見ていきます。
 
 <pre>
 &gt;
 </pre>
 
 <p>An empty line denotes that the request headers are now finished and the rest of the request contains data we’re sending to the server. In this case, we’re not sending any data, so the rest of the curl output is dedicated to the HTTP response.
+<p>空の行は、リクエストヘッダーがここで終わりであり、残りのリクエストがサーバーに送信されたデータを含んでいることを表します。このケースでは、私たちは何もデータを送っていないので、残りのcurlの出力にはHTTPレスポンスだけが含まれています。
 
 <pre>
 &lt; HTTP/1.1 201 Created
 </pre>
 
 <p>The first line of CouchDB’s HTTP response includes the HTTP version information (again, to acknowledge that the requested version could be processed), an HTTP <em>status code</em>, and a <em>status code message</em>. Different requests trigger different response codes. There’s a whole range of them telling the client (<code>curl</code> in our case) what effect the request had on the server. Or, if an error occurred, what kind of error. RFC 2616 (the HTTP 1.1 specification) defines clear behavior for response codes. CouchDB fully follows the RFC.
+<p>CouchDBのHTTPレスポンスの最初の行はHTTPバージョンの情報（繰り返しになりますが、リクエストされたバージョンが処理できたことを知らせます）、HTTPステータスコード、そしてステータスコードメッセージです。異なったリクエストには異なったレスポンスコードが返されます。これらのすべてが、リクエストがサーバーにどのような影響を与えるのかをクライアント（私たちのケースではcurlです）に知らせます。また、エラーが起きた場合には、どのような種類のエラーかを知らせます。RFC 2616（HTTP 1.1の仕様）はレスポンスコードの振る舞いについて明確に定義します。CouchDBはRFCに完全に従います。
 
 <p>The <em>201 Created</em> status code tells the client that the resource the request was made against was successfully created. No surprise here, but if you remember that we got an error message when we tried to create this database twice, you now know that this response could include a different response code. Acting upon responses based on response codes is a common practice. For example, all response codes of 400 or larger tell you that some error occurred. If you want to shortcut your logic and immediately deal with the error, you could just check a <code>&gt;= 400</code> response code.
+<p>201 Createdステータスコードはクライアントに、リクエストが作成されたリソースが正常に作成されたことを知らせます。何も驚くことはありませんが、このデータベースを2回作成しようとしたとき、エラーメッセージを見たことを思い出せば、そのレスポンスは異なったレスポンスコードを含んでいたことが今は分かります。レスポンスコードに基づいたレスポンスに従うことは、一般的な慣習です。例えば、400以上のすべてのレスポンスコードは、何らかのエラーが起こったことを知らせます。もし、ロジックをショートカットし、すぐにエラーに対処したいのであれば、単に>= 400レスポンスコードをチェックすることができます。
 
 <pre>
 &lt; Server: CouchDB/0.10.1 (Erlang OTP/R13B)
 </pre>
 
 <p>The <code>Server</code> header is good for diagnostics. It tells us which CouchDB version and which underlying Erlang version we are talking to. In general, you can ignore this header, but it is good to know it’s there if you need it.
+<p>Serverヘッダーは診断に有用です。これは、通信しているCouchDBのバージョンとその基礎となるErlangのバージョンを知らせます。一般的に、あなたはこのヘッダーを無視することができますが、必要なときにここにあるということを知っておくのは良いことです。
 
 <pre>
 &lt; Date: Sun, 05 Jul 2009 22:48:28 GMT
 </pre>
 
 <p>The <code>Date</code> header tells you the time of the server. Since client and server time are not necessary synchronized, this header is purely informational. You shouldn’t build any critical application logic on top of this!
+<p.Dateヘッダーはサーバーの時間を知らせます。クライアントの時間とサーバーの時間とは同期している必要はないので、このヘッダーは純粋に情報提供です。これを基に重要なアプリケーションロジックを構築すべきではありません！
 
 <pre>
 &lt; Content-Type: text/plain;charset=utf-8
 </pre>
 
 <p>The <code>Content-Type</code> header tells you which MIME type the HTTP response body is and its encoding. We already know CouchDB returns JSON strings. The appropriate <code>Content-Type</code> header is <code>application/json</code>. Why do we see <code>text/plain</code>? This is where pragmatism wins over purity. Sending an <code>application/json</code> <code>Content-Type</code> header will make a browser offer you the returned JSON for download instead of just displaying it. Since it is extremely useful to be able to test CouchDB from a browser, CouchDB sends a <code>text/plain</code> content type, so all browsers will display the JSON as text.
+<p>Content-TypeヘッダーはHTTPレスポンスの本文がどのMIMEタイプなのか、とそのエンコーディングを知らせます。私たちはすでにCouchDBがJSON文字列を返すことを知っています。適切なContent-Typeヘッダーはapplication/jsonです。何故text/plainになっているのでしょう？ここは現実主義が純粋性に勝利するところです。application/json Content-Typeヘッダーを送ると、ブラウザーはそれを単純に表示する代わりに返されたJSONをダウンロードさせようとするでしょう。CouchDBをブラウザーからテストするためには非常に便利なので、すべてのブラウザーがJSONをテキストとして表示するように、CouchDBはtext/plainコンテンツタイプを送信します。
 
 <p>There are some browser extensions that make your browser JSON-aware, but they are not installed by default.
+<p>ブラウザーのJSON対応にするためのブラウザー拡張もありますが、それらは標準でインストールされてはいません。
 
 <p>Do you remember the <code>Accept</code> request header and how it is set to <code>\*/\* -&gt; */*</code> to express interest in any MIME type? If you send <code>Accept: application/json</code> in your request, CouchDB knows that you can deal with a pure JSON response with the proper <code>Content-Type</code> header and will use it instead of <code>text/plain</code>.
+<p>Acceptリクエストヘッダーと、任意のMIMEタイプへの関心を表現するためにそれを\\\*/\\\* -> \*/\*に設定する方法を覚えているでしょうか。リクエストをAccept: application/jsonとして送信した場合、CouchDBはあなたが適切なContent-Typeの付いた純粋なJSONレスポンスを扱うことができると理解し、text/plainの代わりにそれを使うでしょう。
+
 
 <pre>
 &lt; Content-Length: 12
 </pre>
 
 <p>The <code>Content-Length</code> header simply tells us how many bytes the response body has.
+<p>Content-Lengthヘッダーは単にレスポンスの本文が何バイトであるかを知らせます。
 
 <pre>
 &lt; Cache-Control: must-revalidate
 </pre>
 
 <p>This <code>Cache-Control</code> header tells you, or any proxy server between CouchDB and you, not to cache this response.
+<p>このCache-Controlヘッダーは、あなたやCouchDBとあなたとの間にあるプロキシーサーバーにこのレスポンスをキャッシュしないよう指示します。
 
 <pre>
 &lt;
 </pre>
 
 <p>This empty line tells us we’re done with the response headers and what follows now is the response body.
+<p>この空の行はレスポンスヘッダーが終了したことと、この後にレスポンスの本文が続くことを知らせます。
 
 <pre>
 {"ok":true}
 </pre>
 
 <p>We’ve seen this before.
+<p>これは前に見ました。
 
 <pre>
 * Connection #0 to host 127.0.0.1 left intact
@@ -220,122 +267,155 @@ curl -vX PUT http://127.0.0.1:5984/albums-backup
 </pre>
 
 <p>The last two lines are <code>curl</code> telling us that it kept the TCP connection it opened in the beginning open for a moment, but then closed it after it received the entire response.
+<p>最後の2行はcurlに、最初に開いたTCP接続をしばらく維持していたが、すべてのレスポンスを受け取った後でこれを閉じたということを知らせます。
 
 <p>Throughout the book, we’ll show more requests with the <code>-v</code> option, but we’ll omit some of the headers we’ve seen here and include only those that are important for the particular request.
+<p>この本を通して、私たちはより多くのリクエストを-vオプション付きで示しますが、ここで見たヘッダーのいくつかは省略し、特定のリクエストについて重要なもののみを含みます。
 
 <p>Creating databases is all fine, but how do we get rid of one? Easy—just change the HTTP method:
+<p>データベースの作成はすべて成功しましたが、削除はどのようにするのでしょうか。簡単です。単にHTTPメソッドを次のように変更します。
 
 <pre>
 &gt; curl -vX DELETE http://127.0.0.1:5984/albums-backup
 </pre>
 
 <p>This deletes a CouchDB database. The request will remove the file that the database contents are stored in. There is no “Are you sure?” safety net or any “Empty the trash” magic you’ve got to do to delete a database. Use this command with care. Your data will be deleted without a chance to bring it back easily if you don’t have a backup copy.
+<p>これはCouchDBのデータベースを削除します。このリクエストはデータベースの内容が保存されているファイルを削除します。データベースを削除するとき、「本当に削除しますか」というセーフティーネットや、「ゴミ箱を空にする」のような魔法はありません。このコマンドは注意して使用してください。バックアップコピーを持っていなければ、あなたのデータは簡単に元に戻すチャンスなしに削除されるでしょう。
 
 <p>This section went knee-deep into HTTP and set the stage for discussing the rest of the core CouchDB API. Next stop: documents.
+<p>このセクションではHTTPについて膝の深さまで行き、コアCouchDB APIの残りを議論するための足場を組みました。次の停留所は、ドキュメントです。
 
 <h3 id="documents">Documents</h3>
+<h3 id="documents">ドキュメント</h3>
 
 <p>Documents are CouchDB’s central data structure. The idea behind a document is, unsurprisingly, that of a real-world document—a sheet of paper such as an invoice, a recipe, or a business card. We already learned that CouchDB uses the JSON format to store documents. Let’s see how this storing works at the lowest level.
+<p>ドキュメントはCouchDBの中心をなすデータ構造です。ドキュメントの背後にある考え方は、当然、現実世界の文書、つまり請求書、レシピや名刺などの紙1枚です。私たちはすでにCouchDBがドキュメントを保存するためにJSON形式を使っていることを学びました。この保存が最も下のレベルではどのように動作しているのかを見てみましょう。
 
 <p>Each document in CouchDB has an <em>ID</em>. This ID is unique per database. You are free to choose any string to be the ID, but for best results we recommend a UUID (or GUID), i.e., a Universally (or Globally) Unique IDentifier. UUIDs are random numbers that have such a low collision probability that everybody can make thousands of UUIDs a minute for millions of years without ever creating a duplicate. This is a great way to ensure two independent people cannot create two different documents with the same ID. Why should you care what somebody else is doing? For one, that somebody else could be you at a later time or on a different computer; secondly, CouchDB replication lets you share documents with others and using UUIDs ensures that it all works. But more on that later; let’s make some documents:
+<p>CouchDBの各ドキュメントはIDを持ちます。このIDはデータベースごとに一意です。IDには任意の文字列を自由に選ぶことができますが、最良の結果を得るために、私たちはUUID（またはGUID）、すなわちUniversal（またはGlobally） Unique IDentifierを推奨します。UUIDは、衝突する確率の非常に低いランダムな数字です。その確率は、100万年間すべての人が1分間に1000個のUUIDを重複することなく生成し続けることができるほどです。これは2つの独立した人が2つの異なったドキュメントを同じIDでつくることができないということを確実にするために最適な方法です。何故他の誰かが行うことを気にしなければならないのでしょうか。第1に、その他の誰かというのが後のあなた自身、または違うコンピューターを使うあなたであるかも知れないからです。第2に、CouchDBのレプリケーションを使うと他の人とドキュメントを共有することになり、UUIDを使うとそれが完全に動作することを確実にできるからです。しかし詳細は後にしましょう。いくつかドキュメントを作成してみましょう。
 
 <pre>
 curl -X PUT http://127.0.0.1:5984/albums/6e1295ed6c29495e54cc05947f18c8af -d '{"title":"There is Nothing Left to Lose","artist":"Foo Fighters"}'
 </pre>
 
 <p>CouchDB replies:
+<p>CouchDBは次のように返答します。
 
 <pre>
 {"ok":true,"id":"6e1295ed6c29495e54cc05947f18c8af","rev":"1-2902191555"}
 </pre>
 
 <p>The <code>curl</code> command appears complex, but let’s break it down. First, <code>-X PUT</code> tells <code>curl</code> to make a PUT request. It is followed by the URL that specifies your CouchDB IP address and port. The resource part of the URL <code>/albums/6e1295ed6c29495e54cc05947f18c8af</code> specifies the location of a document inside our <code>albums</code> database. The wild collection of numbers and characters is a UUID. This UUID is your document’s ID. Finally, the <code>-d</code> flag tells <code>curl</code> to use the following string as the body for the PUT request. The string is a simple JSON structure including <code>title</code> and <code>artist</code> attributes with their respective values.
+<p>curlコマンドは複雑に見えますが、分解してみましょう。まず、-X PUTはcurlにPUTリクエストを送信するよう指示します。その後にあなたのCouchDBのIPアドレスとポートを指定するURLが続きます。/albums/6e1295ed6c29495e54cc05947f18c8afというURLのリソース部分は、私たちのalbumsデータベースの中でのドキュメントの場所を指定します。数字と文字の羅列はUUIDです。このUUIDはあなたのドキュメントのIDです。最後に、-dフラグはcurlに、続く文字列をPUTリクエストの本文として使うよう指示します。この文字列は単純なJSONの構造で、title属性とartist属性をそれぞれの値として含んでいます。
 
 <div class="aside note">
 
 <p>If you don’t have a UUID handy, you can ask CouchDB to give you one (in fact, that is what we did just now without showing you). Simply send a GET request to <code>/_uuids</code>:
+<p>もしUUIDを簡単に用意することができなければ、CouchDBにUUIDを要求することができます（実際、これが先程私たちがあなたに見せずに行ったことです）。単純にGETリクエストを/_uuidsに送ります。
 
 <pre>
 curl -X GET http://127.0.0.1:5984/_uuids
 </pre>
 
 <p>CouchDB replies:
+<p>CouchDBは次のように返答します。
 
 <pre>
 {"uuids":["6e1295ed6c29495e54cc05947f18c8af"]}
 </pre>
 
 <p>Voilá, a UUID. If you need more than one, you can pass in the <code>?count=10</code> HTTP parameter to request 10 UUIDs, or really, any number you need.
+<p>はい、これがUUIDです。もしあなたが1個より多く欲しいのであれば、10個のUUIDを要求するためにHTTPパラメータとして?count=10を渡すことができ、実際には必要な任意の数を使うことができます。
 
 </div>
 
 <p>To double-check that CouchDB isn’t lying about having saved your document (it usually doesn’t), try to retrieve it by sending a GET request:
+<p>CouchDBがドキュメントを保存したということについて嘘をついていないかをダブルチェックするために、GETリクエストを送ってドキュメントを取得してみましょう。
 
 <pre>
 curl -X GET http://127.0.0.1:5984/albums/6e1295ed6c29495e54cc05947f18c8af
 </pre>
 
 <p>We hope you see a pattern here. Everything in CouchDB has an address, a URI, and you use the different HTTP methods to operate on these URIs.
+<p>私たちは、あなたがここにパターンを見付けることを期待しています。CouchDBの中のすべてのものはアドレス、URIを持っていて、これらのURIを操作するために異なったHTTPメソッドを使います。
 
 <p>CouchDB replies:
+<p>CouchDBは次のように返答します。
 
 <pre>
 {"_id":"6e1295ed6c29495e54cc05947f18c8af","_rev":"1-2902191555","title":"There is Nothing Left to Lose","artist":"Foo Fighters"}
 </pre>
 
 <p>This looks a lot like the document you asked CouchDB to save, which is good. But you should notice that CouchDB added two fields to your JSON structure. The first is <code>_id</code>, which holds the UUID we asked CouchDB to save our document under. We always know the ID of a document if it is included, which is very convenient.
+<p>これはあなたがCouchDBに保存するよう指示したドキュメントに良く似ていて、問題ありません。しかし、CouchDBが2つのフィールドをJSONの構造に追加していることに気付いたでしょう。1つは、_idで、これは私たちがCouchDBにドキュメントをここに保存するようにと指示したUUIDを保持するものです。私たちはIDが含まれている限り、いつもドキュメントのIDを知っています。これはとても便利です。
 
 <p>The second field is <code>_rev</code>. It stands for <em>revision</em>.
+<p>2つ目のフィールドは、_revです。これはrevisionの略です。
 
 <h4 id="revisions">Revisions</h4>
+<h4 id="revisions">リビジョン</h4>
 
 <p>If you want to change a document in CouchDB, you don’t tell it to go and find a field in a specific document and insert a new value. Instead, you load the full document out of CouchDB, make your changes in the JSON structure (or object, when you are doing actual programming), and save the entire new revision (or version) of that document back into CouchDB. Each revision is identified by a new <code>_rev</code> value.
+<p>もしあなたがCouchDBのドキュメントを変更したいと思ったなら、そこに行って特定のドキュメントからフィールドを探し、新しい値を挿入するよう指示することはできません。代わりに、CouchDBからドキュメント全体を読み込んで、JSONの構造（あなたが実際のプログラミングを行っているのであれば、オブジェクト）に変更を加えて、全体をそのドキュメントの新しいリビジョン（またはバージョン）をCouchDBに保存します。各リビジョンは、新しい_revの値で識別されます。
 
 <p>If you want to update or delete a document, CouchDB expects you to include the <code>_rev</code> field of the revision you wish to change. When CouchDB accepts the change, it will generate a new revision number. This mechanism ensures that, in case somebody else made a change unbeknownst to you before you got to request the document update, CouchDB will not accept your update because you are likely to overwrite data you didn’t know existed. Or simplified: whoever saves a change to a document first, wins. Let’s see what happens if we don’t provide a <code>_rev</code> field (which is equivalent to providing a outdated value):
+<p>もしドキュメントを更新したり削除したいのであれば、CouchDBは変更したいリビジョンの_revフィールドが含まれていることを期待します。CouchDBが変更を受け入れると、新しいリビジョン番号が生成されます。この仕組みは、あなたがドキュメントの更新のリクエストを行う前に、他の誰かがあなたにとって未知の変更を行った場合に、CouchDBがあなたの更新を受け入れないことを確実にします。これは、あなたが存在を知らないデータを上書きしてしまう可能性があるためです。単純に言えば、先にドキュメントへの変更を保存した人が勝つということです。_revフィールドを与えなかった場合（これは期限切れの値を与えた場合と同じです）に、何が起きるかを見てみましょう。
 
 <pre>
 curl -X PUT http://127.0.0.1:5984/albums/6e1295ed6c29495e54cc05947f18c8af -d '{"title":"There is Nothing Left to Lose","artist":"Foo Fighters","year":"1997"}'
 </pre>
 
 <p>CouchDB replies:
+<p.CouchDBは次のように返答します。
 
 <pre>
 {"error":"conflict","reason":"Document update conflict."}
 </pre>
 
 <p>If you see this, add the latest revision number of your document to the JSON structure:
+<p>これを見たら、あなたのドキュメントの最新のリビジョン番号をJSONの構造に追加してください。
 
 <pre>
 curl -X PUT http://127.0.0.1:5984/albums/6e1295ed6c29495e54cc05947f18c8af -d '{"_rev":"1-2902191555","title":"There is Nothing Left to Lose", "artist":"Foo Fighters","year":"1997"}'
 </pre>
 
 <p>Now you see why it was handy that CouchDB returned that <code>_rev</code> when we made the initial request. CouchDB replies:
+<p>これで何故最初のリクエストを送信したときにCouchDBがその_revを返すことが役に立つのかが分かりました。CouchDBは次のように返答します。
 
 <pre>
 {"ok":true,"id":"6e1295ed6c29495e54cc05947f18c8af","rev":"2-2739352689"}
 </pre>
 
 <p>CouchDB accepted your write and also generated a new revision number. The revision number is the md5 hash of the transport representation of a document with an <code>N-</code> prefix denoting the number of times a document got updated. This is useful for replication. See <a href="conflicts.html">Chapter 17, Conflict Management</a> for more information.
+<p>CouchDBはあなたの書き込みを受け入れ、新しいリビジョン番号を生成しました。リビジョン番号は、先頭にドキュメントが更新された回数を示すN-を付けた、ドキュメントの移動用の表現のmd5ハッシュです。これはレプリケーションに便利です。詳細については「< href="conflicts.html">17章 衝突の管理</a>」を参照してください。
 
 <p>There are multiple reasons why CouchDB uses this revision system, which is also called Multi-Version Concurrency Control (MVCC). They all work hand-in-hand, and this is a good opportunity to explain some of them.
+<p>何故CouchDBがMulti-Version Concurrency Control（MVCC）とも呼ばれるこのリビジョンシステムを使っているのかには、複数の理由があります。これらはすべて協力して動作するのですが、これらのいくつかについてはこれが説明する良い機会です。
 
 <p>One of the aspects of the HTTP protocol that CouchDB uses is that it is <em>stateless</em>. What does that mean? When talking to CouchDB you need to <em>make requests</em>. Making a request includes opening a network connection to CouchDB, exchanging bytes, and closing the connection. This is done every time you make a request. Other protocols allow you to open a connection, exchange bytes, keep the connection open, exchange more bytes later—maybe depending on the bytes you exchanged at the beginning—and eventually close the connection. Holding a connection open for later use requires the server to do extra work. One common pattern is that for the lifetime of a connection, the client has a consistent and static view of the data on the server. Managing huge amounts of parallel connections is a significant amount of work. HTTP connections are usually short-lived, and making the same guarantees is a lot easier. As a result, CouchDB can handle many more concurrent connections.
+<p>CouchDBが使用しているHTTPプロトコルの一面として、ステートレスであるということが挙げられます。それはどういう意味でしょうか。CouchDBと通信するときに、あなたはリクエストを送信する必要があります。リクエストの送信にはCouchDBへのネットワーク接続を開き、バイト列を交換し、接続を閉じることが含まれます。あなたがリクエストを送信する度に、これが毎回行われます。他のプロトコルには、接続を開いて、バイト列を交換して、接続を開いたままで、後で更にバイト列（それは最初に交換したバイト列に依存しているかも知れません）を交換し、最後に接続を閉じることのできるものもあります。後で使うために接続を開いたままにしておくには、サーバーに余分な作業を行わせなければなりません。ひとつの一般的なパターンは、接続の存続期間中、クライアントがデータの一貫性のある静的なビューをサーバーに持っている場合です。膨大な量の並行した接続を管理することは、かなりの量の作業です。HTTP接続は通常、存続期間が短く、同じ保証をするのもずっと簡単です。結果として、CouchDBはより多くの同時接続を処理することができます。
 
 <p>Another reason CouchDB uses MVCC is that this model is simpler conceptually and, as a consequence, easier to program. CouchDB uses less code to make this work, and less code is always good because the ratio of defects per lines of code is static.
+<p>CouchDBがMVCCを使用するもうひとつの理由は、このモデルが概念的に単純であり、結果としてプログラミングが簡単になるということです。CouchDBのこの作業を行うためのコードは少なく、コード1行当たりの欠陥の比率はほとんど変化しないことから、コードが少ないということはいつも良いことです。
 
 <p>The revision system also has positive effects on replication and storage mechanisms, but we’ll explore these later in the book.
+<p>また、このリビジョンシステムは、レプリケーションやストレージ機構にプラスの効果をもたらしますが、それについてはこの本の後半で見ていきます。
 
 <div class="aside warning">
 
 <p>The terms <em>version</em> and <em>revision</em> might sound familiar (if you are programming without version control, drop this book right now and start learning one of the popular systems). Using new versions for document changes works a lot like version control, but there’s an important difference: CouchDB does <em>not</em> guarantee that older versions are kept around.
+<p>バージョンという用語やリビジョンという用語はおなじみでしょう（もしあなたがバージョン管理をせずにプログラミングをしているのであれば、この本はすぐに投げ捨てて、人気のあるバージョン管理システムのどれかの学習を始めてください）。ドキュメントのために新しいバージョンを使うことは、バージョン管理のように作業を変えてくれます。しかし、そこには重要な違いがあります。CouchDBは古いバージョンのドキュメントが保持されることを保証しないのです。
 
 </div>
 
 <h4 id="detail">Documents in Detail</h4>
+<h4 id="detail">ドキュメントの詳細</h4>
 
 <p>Now let’s have a closer look at our document creation requests with the <code>curl</code> <code>-v</code> flag that was helpful when we explored the database API earlier. This is also a good opportunity to create more documents that we can use in later examples.
+<p>さて、先程データベースAPIを調べるときに便利だったcurlの-vを使って、ドキュメント作成リクエストを詳しく見てみましょう。これは後の例で使うことができるより多くのドキュメントを作る良い機会でもあります。
 
 <p>We’ll add some more of our favorite music albums. Get a fresh UUID from the <code>/_uuids</code> resource. If you don’t remember how that works, you can look it up a few pages back.
+<p>私たちのお気に入りの音楽アルバムをもう少し追加します。新しいUUIDを/_uuidsリソースから取得します。もし、どのように作業を行うのかを思い出せないのであれば、数ページ戻れば調べることができます。
 
 <pre>
 curl -vX PUT http://127.0.0.1:5984/albums/70b50bfa0a4b3aed1f8aff9e92dc16a0 -d '{"title":"Blackened Sky","artist":"Biffy Clyro","year":2002}'
@@ -344,10 +424,12 @@ curl -vX PUT http://127.0.0.1:5984/albums/70b50bfa0a4b3aed1f8aff9e92dc16a0 -d '{
 <div class="aside note">
 
 <p>By the way, if you happen to know more information about your favorite albums, don’t hesitate to add more properties. And don’t worry about not knowing all the information for all the albums. CouchDB’s schema-less documents can contain whatever you know. After all, you should relax and not worry about data.
+<p>ところで、もしあなたのアルバムについてもっと多くの情報を知りたいのであれば、ためらうことなくより多くのプロパティを追加してください。そして、すべてのアルバムのすべての情報について知っているわけではないことは心配しないでください。CouchDBのスキーマレスドキュメントには、あなたが知っている情報を何でも含めることができます。結局、あなたはリラックスするべきであって、データについて心配すべきではありません。
 
 </div>
 
 <p>Now with the <code>-v</code> option, CouchDB’s reply (with only the important bits shown) looks like this:
+<p>今、-vオプションを付けたので、（表示される重要な部分のみを含んだ）CouchDBの返答はこのようになります。
 
 <pre>
 &gt; PUT /albums/70b50bfa0a4b3aed1f8aff9e92dc16a0 HTTP/1.1
@@ -360,52 +442,68 @@ curl -vX PUT http://127.0.0.1:5984/albums/70b50bfa0a4b3aed1f8aff9e92dc16a0 -d '{
 </pre>
 
 <p>We’re getting back the <code>201 Created</code> HTTP status code in the response headers, as we saw earlier when we created a database. The <code>Location</code> header gives us a full URL to our newly created document. And there’s a new header. An Etag in HTTP-speak identifies a specific version of a resource. In this case, it identifies a specific version (the first one) of our new document. Sound familiar? Yes, conceptually, an Etag is the same as a CouchDB document revision number, and it shouldn’t come as a surprise that CouchDB uses revision numbers for Etags. Etags are useful for caching infrastructures. We’ll learn how to use them in <a href="show.html">Chapter 8, Show Functions</a>.
+<p>私たちが以前データベースを作成したときと同じように、201 Created HTTPステータスコードがレスポンスの中で返されました。Locationヘッダーは新しく作成されたドキュメントへの完全なURLを示しています。そして、新しいヘッダーがあります。HTTP通信におけるEtagは、リソースの特定のバージョンを識別します。この場合、これは新しいドキュメントの特定の（今回は最初の）バージョンを識別します。おなじみでしょうか。そう、概念的には、EtagはCouchDBにおけるドキュメントリビジョン番号と同じであり、CouchDBがEtagにリビジョン番号を使っているということは驚くことではないはずです。Etagはキャッシュインフラのために役立ちます。これらをどのように使うのかは、<a href="show.html">8章 ショウ機能</a>で学びます。
 
 <h5 id="attachments">Attachments</h5>
+<h5 id="attachments">添付ファイル</h5>
 
 <p>CouchDB documents can have attachments just like an email message can have attachments. An attachment is identified by a name and includes its MIME type (or Content-Type) and the number of bytes the attachment contains. Attachments can be any data. It is easiest to think about attachments as files attached to a document. These files can be text, images, Word documents, music, or movie files. Let’s make one.
+<p.電子メールのメッセージに添付ファイルを含めることができるのとちょうど同じように、CouchDBのドキュメントには添付ファイルを含めることができます。添付ファイルは名前によって識別され、MIMEタイプ（またはContent-Type）と添付ファイルのバイト数を含みます。添付ファイルには任意のデータを含めることができます。添付ファイルについては、ドキュメントに添付されたファイルと考えるのが最も簡単です。これらのファイルとしては、テキスト、画像、Wordドキュメント、音楽、動画のファイルなどを含めることができます。ひとつ作ってみましょう。
 
 <p>Attachments get their own URL where you can upload data. Say we want to add the album artwork to the <code>6e1295ed6c29495e54cc05947f18c8af</code> document (“There is Nothing Left to Lose”), and let’s also say the artwork is in a file <code>artwork.jpg</code> in the current directory:
+<p>添付ファイルはデータをアップロードできる場所として固有のURLを持ちます。仮に、私たちはアルバムアートワークを6e1295ed6c29495e54cc05947f18c8afドキュメント（「There is Nothing Left to Lose」）に追加したいとして、そのアートワークはカレントディレクトリのartwork.jpgファイルにあるとしましょう。
 
 <pre>
 &gt; curl -vX PUT http://127.0.0.1:5984/albums/6e1295ed6c29495e54cc05947f18c8af/ artwork.jpg?rev=2-2739352689 --data-binary @artwork.jpg -H "Content-Type: image/jpg"
 </pre>
 
 <p>The <code>-d@</code> option tells <code>curl</code> to read a file’s contents into the HTTP request body. We’re using the <code>-H</code> option to tell CouchDB that we’re uploading a JPEG file. CouchDB will keep this information around and will send the appropriate header when requesting this attachment; in case of an image like this, a browser will render the image instead of offering you the data for download. This will come in handy later. Note that you need to provide the current revision number of the document you’re attaching the artwork to, just as if you would update the document. Because, after all, attaching some data is changing the document.
+<p>-d@オプションはcurlに、ファイルの内容をHTTPリクエストの本文に読み込むよう指示します。CouchDBに、JPEGファイルをアップロードしていることを知らせるために、-Hオプションを使用しています。CouchDBはこの情報を保持し、この添付ファイルが要求された場合には適切なヘッダーを送信します。このように画像の場合には、ブラウザーはデータをダウンロードさせる代わりに画像をレンダリングします。これは後で役に立つことになるでしょう。ちょうどドキュメントをアップデートするときと同じように、アートワークを添付するドキュメントの現在のリビジョン番号を渡す必要があることに注意してください。何故なら、結局、データを添付するということはドキュメントを変更するということだからです。
 
 <p>You should now see your artwork image if you point your browser to <code>http://127.0.0.1:5984/albums/6e1295ed6c29495e54cc05947f18c8af/artwork.jpg</code>.
+<p>あなたがブラウザでhttp://127.0.0.1:5984/albums/6e1295ed6c29495e54cc05947f18c8af/artwork.jpgにアクセスすれば、アートワークの画像が見えるはずです。
 
 <p>If you request the document again, you’ll see a new member:
+<p>ドキュメントをもう一度要求すると、新しいメンバーが見えるでしょう。
 
 <pre>
 curl http://127.0.0.1:5984/albums/6e1295ed6c29495e54cc05947f18c8af
 </pre>
 
 <p>CouchDB replies:
+<p>CouchDBは次のように返答します。
 
 <pre>
 {"_id":"6e1295ed6c29495e54cc05947f18c8af","_rev":"3-131533518","title": "There is Nothing Left to Lose","artist":"Foo Fighters","year":"1997","_attachments":{"artwork.jpg":{"stub":true,"content_type":"image/jpg","length":52450}}}
 </pre>
 
 <p><code>_attachments</code> is a list of keys and values where the values are JSON objects containing the attachment metadata. <code>stub=true</code> tells us that this entry is just the metadata. If we use the <code>?attachments=true</code> HTTP option when requesting this document, we’d get a Base64-encoded string containing the attachment data.
+<p>_attachmentsはキーと値のリストで、その値は添付ファイルのメタデータを含むJSONオブジェクトです。stub=trueはこのエントリーが単なるメタデータであることを示します。このドキュメントを要求するときに?attachments=true HTTPオプションを使うと、添付ファイルのデータを含むBase64エンコードされた文字列を取得できます。
 
 <p>We’ll have a look at more document request options later as we explore more features of CouchDB, such as replication, which is the next topic.
+<p>ドキュメントリクエストオプションについては後で、次のトピックであるレプリケーションのようなCouchDBのより多くの機能を探索するときに詳細を見ましょう。
 
 <h3 id="replication">Replication</h3>
+<h3 id="replication">レプリケーション</h3>
 
 <p>CouchDB replication is a mechanism to synchronize databases. Much like <code>rsync</code> synchronizes two directories locally or over a network, replication synchronizes two databases locally or remotely.
+<p>CouchDBのレプリケーションはデータベースを同期する仕組みです。rsyncが2つのディレクトリをローカルで、またはネットワーク越しで同期するのとちょうど同じように、レプリケーションは2つのデータベースをローカルで、またはリモートで同期します。
 
 <p>In a simple POST request, you tell CouchDB the <em>source</em> and the <em>target</em> of a replication and CouchDB will figure out which documents and new document revisions are on <em>source</em> that are not yet on <em>target</em>, and will proceed to move the missing documents and revisions over.
+<p>単純なPOSTリクエストにおいて、CouchDBにレプリケーション対象のsourceとtargetを与えると、CouchDBはどのドキュメントと新しいドキュメントリビジョンがsourceにあってtargetにはないのかを判断し、存在しないドキュメントとリビジョンのコピーを進めます。
 
 <p>We’ll take an in-depth look at replication later in the book; in this chapter, we’ll just show you how to use it.
+<p>この本の後半では、レプリケーションについてより深く見ていきます。この章では、どのように使うのかだけを示します。
 
 <p>First, we’ll create a target database. Note that CouchDB won’t automatically create a target database for you, and will return a replication failure if the target doesn’t exist (likewise for the source, but that mistake isn’t as easy to make):
+<p>まず、ターゲットデータベースを作成します。CouchDBはあなたのために自動的にターゲットデータベースを作成してはくれないということ、そしてもしターゲットが存在しなければレプリケーションは失敗するということに注意してください（ソースの場合も同様ですが、ターゲットの場合の失敗は気付きにくいものです）。
 
 <pre>
 curl -X PUT http://127.0.0.1:5984/albums-replica
 </pre>
 
 <p>Now we can use the database <code>albums-replica</code> as a replication target:
+<p>今回は、albums-replicaデータベースをレプリケーションターゲットに使います。
 
 <pre>
 curl -vX POST http://127.0.0.1:5984/_replicate -d '{"source":"albums","target":"albums-replica"}'
@@ -414,10 +512,13 @@ curl -vX POST http://127.0.0.1:5984/_replicate -d '{"source":"albums","target":"
 <div class="aside note">
 
 <p>As of version 0.11, CouchDB supports the option <code>"create_target":true</code> placed in the JSON POSTed to the <code>_replicate</code> URL. It implicitly creates the target database if it doesn’t exist.
+<p>バージョン0.11現在、CouchDBは_replicate URLにPOSTするJSONの中で"create_target":trueオプションをサポートしています。これはターゲットデータベースが存在しない場合に、暗黙的にターゲットデータベースを作成します。
+
 
 </div>
 
 <p>CouchDB replies (this time we formatted the output so you can read it more easily):
+<p>CouchDBは次のように返答します（今はより読みやすいように出力を整形しています）。 
 
 <pre>
 {
@@ -441,34 +542,43 @@ curl -vX POST http://127.0.0.1:5984/_replicate -d '{"source":"albums","target":"
 </pre>
 
 <p>CouchDB maintains a <em>session history</em> of replications. The response for a replication request contains the history entry for this <em>replication session</em>. It is also worth noting that the request for replication will stay <em>open</em> until replication closes. If you have a lot of documents, it’ll take a while until they are all replicated and you won’t get back the replication response until all documents are replicated. It is important to note that replication replicates the database only as it was at the point in time when replication was started. So, any additions, modifications, or deletions subsequent to the start of replication will not be replicated.
+<p>CouchDBはレプリケーションのセッション履歴を管理します。レプリケーションリクエストに対するレスポンスには、このレプリケーションセッションの履歴エントリーが含まれます。レプリケーションのリクエストがレプリケーションが閉じるまで開き続けるということには大きな価値があります。もしあなたがたくさんのドキュメントを持っているのであれば、それらすべてが複製されるのにはしばらく時間が掛かりますし、すべてのドキュメントが複製されるまではレプリケーションレスポンスは返ってこないでしょう。レプリケーションはデータベースをレプリケーションの始まったその時点の状態で複製するということに注意することは大切です。そのため、レプリケーションの開始後に行われた追加、変更、または削除については複製されません。
 
 <p>We’ll punt on the details again—the <code>"ok": true</code> at the end tells us all went well. If you now have a look at the <code>albums-replica</code> database, you should see all the documents that you created in the <code>albums</code> database. Neat, eh?
+<p>もう一度詳細を説明しましょう。最後の"ok": trueはすべてがうまくいったということを示します。もしあなたが今、albums-replicaデータベースを見たのならば、あなたがalbumsデータベースに作成したすべてのドキュメントが見えたはずです。すっきりしているでしょう。
 
 <p>What you just did is called <em>local replication</em> in CouchDB terms. You created a local copy of a database. This is useful for backups or to keep snapshots of a specific state of your data around for later. You might want to do this if you are developing your applications but want to be able to roll back to a stable version of your code and data.
+<p>あなたが行ったことは、CouchDBの用語でローカルレプリケーションと言います。あなたはデータベースのローカルコピーを作成しました。これは、バックアップのためや、後のためにあなたのデータの特定の状態のスナップショットを取るために役立ちます。あなたがアプリケーションを開発しているのであれば、これを使ってコードとデータとを安定版にロールバックできるようにしたいと思うかも知れません。
 
 <p>There are more types of replication useful in other situations. The <code>source</code> and <code>target</code> members of our replication request are actually links (like in HTML) and so far we’ve seen links relative to the server we’re working on (hence <em>local</em>). You can also specify a remote database as the target:
+<p>レプリケーションにはその他の状況で便利なもっと多くのタイプがあります。レプリケーションリクエストのsourceメンバーとtargetメンバー は実際には（HTMLのものと同じ）リンクであり、私たちは今まで、私たちが作業をしているサーバー（従ってlocal）への相対リンクを見てきました。リモートデータベースをターゲットとして指定することもできます。
 
 <pre>
 curl -vX POST http://127.0.0.1:5984/_replicate -d '{"source":"albums","target":"http://127.0.0.1:5984/albums-replica"}'
 </pre>
 
 <p>Using a local <code>source</code> and a remote <code>target</code> database is called <em>push replication</em>. We’re pushing changes to a remote server.
+<p>ローカルのsourceデータベースとリモートのtargetデータベースを使うレプリケーションは、プッシュレプリケーションと呼ばれます。変更をリモートサーバーへプッシュします。
 
 <div class="aside note">
 
 <p>Since we don’t have a second CouchDB server around just yet, we’ll just use the absolute address of our single server, but you should be able to infer from this that you can put any remote server in there.
+<p>私たちはまだ2台目のCouchDBサーバーを持っていないので、単に1台のサーバーの絶対アドレスを使いますが、このことから、ここにどのリモートサーバーでも当てはめることができるということを推論できるでしょう。
 
 </div>
 
 <p>This is great for sharing local changes with remote servers or buddies next door.
+<p>これはローカルでの変更をリモートサーバーや隣の仲間と共有するために最適です。
 
 <p>You can also use a remote <code>source</code> and a local <code>target</code> to do a <em>pull replication</em>. This is great for getting the latest changes from a server that is used by others:
+<p>プルレプリケーションを行うために、リモートのsourceとローカルのtargetを使うこともできます。これは他の人が使っているサーバーから最新の変更を取得するために最適です。
 
 <pre>
 curl -vX POST http://127.0.0.1:5984/_replicate -d '{"source":"http://127.0.0.1:5984/albums-replica","target":"albums"}'
 </pre>
 
 <p>Finally, you can run <em>remote replication</em>, which is mostly useful for management operations:
+<p>最後に、主に操作の管理のために役立つリモートレプリケーションを実行することができます。
 
 <pre>
 curl -vX POST http://127.0.0.1:5984/_replicate -d '{"source":"http://127.0.0.1:5984/albums","target":"http://127.0.0.1:5984/albums-replica"}'
@@ -477,15 +587,21 @@ curl -vX POST http://127.0.0.1:5984/_replicate -d '{"source":"http://127.0.0.1:5
 <div class="aside note">
 
 <p><strong>CouchDB and REST</strong>
+<p><strong>CouchDBとREST</strong>
 
 <p>CouchDB prides itself on having a <em>RESTful API</em>, but these replication requests don’t look very RESTy to the trained eye. What’s up with that? While CouchDB’s core database, document, and attachment API are RESTful, not all of CouchDB’s API is. The replication API is one example. There are more, as we’ll see later in the book.
+<p>CouchDBはRESTful APIを持っていることを誇りとしていますが、これらのレプリケーションリクエストは訓練された目には非常にREST的とは見えません。どうなっているのでしょうか。CouchDBのコアデータベース、ドキュメント、そして添付ファイルのAPIはRESTfulですが、すべてのCouchDBのAPIがそうという訳ではありません。レプリケーションAPIはその一例です。この本の後半で見るように、もっとたくさんあります。
 
 <p>Why are there RESTful and non-RESTful APIs mixed up here? Have the developers been too lazy to go REST all the way? Remember, REST is an architectural style that lends itself to certain architectures (such as the CouchDB document API). But it is not a one-size-fits-all. Triggering an event like replication does not make a whole lot of sense in the REST world. It is more like a traditional remote procedure call. And there is nothing wrong with this.
+<p>何故RESTfulなAPIとRESTfulでないAPIとが混ざっているのでしょうか。開発者が全部RESTにするのを面倒だと思ったからでしょうか。思い出してください、RESTは（例えばCouchDBのドキュメントAPIのような）特定のアーキテクチャに役立つアーキテクチャの形式です。しかし、それは万能ではありません。レプリケーションのようなイベントを発生させることは、RESTの世界では全く意味がありません。それは、伝統的なリモートプロシージャーコールにより似ています。そのため、これで何の問題もありません。
 
 <p>We very much believe in the “use the right tool for the job” philosophy, and REST does not fit every job. For support, we refer to Leonard Richardson and Sam Ruby who wrote <a href="http://oreilly.com/catalog/9780596529260">RESTful Web Services</a> (O’Reilly), as they share our view.
+<p>私たちは「仕事に対して適切な道具を使う」という哲学を大変信じていて、RESTはすべての仕事に適しているのではありません。サポートとして、私たちの視点を共有している、RESTful Webサービス（オライリー）を書いたLeonard RichardsonとSam Rubyに言及しておきます。
 
 </div>
 
 <h3 id="wrap">Wrapping Up</h3>
+<h3 id="wrap">まとめ</h3>
 
 <p>This is still not the full CouchDB API, but we discussed the essentials in great detail. We’re going to fill in the blanks as we go. For now, we believe you’re ready to start building CouchDB applications.
+<p>これはまだCouchDB APIのすべてではありませんが、主要な点については非常に詳細に議論しました。先へ進み、空白を埋めていきます。とりあえず、あなたはCouchDBアプリケーションを構築し始める準備ができたと私たちは信じています。

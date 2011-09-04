@@ -11,46 +11,62 @@
 <script src="../../../script.js"></script>
 
 <h2 id="notifications">Change Notifications</h2>
+<h2 id="notifications">変更通知</h2>
 
 <p>Say you are building a message service with CouchDB. Each user has an inbox database and other users send messages by dropping them into the inbox database. When users want to read all messages received, they can just open their inbox databases and see all messages.
+<p>CouchDBを使ってメッセージサービスを構築する場合を考えてみましょう。それぞれのユーザーは、受信箱となるデータベースを持っており、他のユーザーがメッセージを送信するには、メッセージをそのユーザーの受信箱におくことになります。
 
 <p>So far, so simple, but now you’ve got your users hitting the Refresh button all the time once they’ve looked at their messages to see if there are new messages. This is commonly referred to as <em>polling</em>. A lot of users are generating a lot of requests that, most of the time, don’t show anything new, just the list of all the messages they already know about.
+<p>ここまでは単純です。しかし、あなたは、送信相手に、一度全てのメッセージを見終わった後で、常に新しいメッセージがないかどうかを確認するために、常に更新ボタンを押させることになります。
 
 <p>Wouldn’t it be nice to ask CouchDB to give you notice when a new message arrives? The <code>_changes</code> database API does just that.
+<p>新しいメッセージが到着したときには、CouchDBに通知をさせればよいのではないでしょうか？ <code>_changes</code> API がちょうどこの仕組みを行います。
 
 <p>The scenario just described can be seen as the <em>cache invalidation problem</em>; that is, when do I know that what I am displaying right now is no longer an apt representation of the underlying data store? Any sort of cache invalidation, not only backend/frontend-related, can be built using <code>_changes</code>.
+<p>上述のシナリオはキャッシュの無効化問題(すなわち、 今表示しているものが、もはや内部データストアを適切に表わしていない、ということをいつ知るのか？)として取り扱うことができます。 <code>_changes</code> は、バックエンドとフロントエンドの間だけではなく、あらゆるキャッシュの無効化に使うことができます。
 
 <p><code>_changes</code> is also designed and suited to extract an activity stream from a database, whether for simple display or, equally important, to act on a new document (or a document change) when it occurs.
+<p><code>_changes</code> はデータベースの活動傾向を抽出するため使うことにも適しています。新しいドキュメントの追加(あるいはドキュメントの更新)が発生したときに、その活動を単に表示することも同様に重要です。
 
 <p>The beauty of systems that use the changes API is that they are <em>decoupled</em>. A program that is interested only in latest updates doesn’t need to know about programs that create new documents and vice versa.
+<p>_changes APIを使った複数のシステムの美しさは、それらが分離されていることです。最新の更新についてのみ関心のあるプログラムは、新しいドキュメントを作るプログラムについて知る必要はありません。逆もまた然りです。
+
 
 <p>Here’s what a <code>changes</code> item looks like:
+<p>以下に、変更リストの要素がどのように見えるかを示します。
 
 <pre>
 {"seq":12,"id":"foo","changes":[{"rev":"1-23202479633c2b380f79507a776743d5"}]}
 </pre>
 
 <p>There are three fields:
+<p>3つのフィールドがあります。
 
 <dl>
 
 <dt><code>seq</code></dt>
 
 <dd>The <code>update_seq</code> of the database that was created when the document with the <code>id</code> got created or changed.</dd>
+<dd><code>id</code> のドキュメントが作成された、あるいは更新されたときの、データベースの <code>update_seq</code> の値です。
 
 <dt><code>id</code></dt>
 
 <dd>The document ID.</dd>
+<dd>ドキュメントIDです</dd>
 
 <dt><code>changes</code></dt>
 
 <dd>An array of fields, which by default includes the document’s revision ID, but can also include information about document conflicts and other things.</dd>
+<dd><code>changes</code> は配列であり、通常、ドキュメントのリビジョンを格納しています。ドキュメントのコンフリクトがあった場合は、その情報も格納します。</dd>
 
 </dl>
 
 <p>The changes API is available for each database. You can get changes that happen in a single database per request. But you can easily send multiple requests to multiple databases’ changes API if you need that.
+<p><code>_changes</code> API はそれぞれのデータベースごとに利用可能です。あなたは、１つのデータベースについて１つのリクエストで変更リストを取得することができます。もし必要であれば、複数のリクエストを複数のデータベースの <code>_changes</code> API に送信することも簡単に可能です。
+
 
 <p>Let’s create a database that we can use as an example later in this chapter:
+<p>それではこの章で使うデータベースを作りましょう
 
 <pre>
 &gt; HOST="http://127.0.0.1:5984"
@@ -59,18 +75,24 @@
 </pre>
 
 <p>There are three ways to request notifications: <em>polling</em> (the default), <em>long polling</em> and <em>continuous</em>. Each is useful in a different scenario, and we’ll discuss all of them in detail.
+<p>通知をリクエストするには3つの方法(ポーリング, ロングポーリング, コンティニュアス [#]_ )があります。それぞれ異なるシナリオで有効です。これから全ての方法について議論しましょう。
+
 
 <h3 id="polling">Polling for Changes</h3>
+<h3 id="polling">変更リストのポーリング</h3>
 
 <p>In the previous example, we tried to avoid the polling method, but it is very simple and in some cases the only one suitable for a problem. Because it is the simplest case, it is the default for the changes API.
+<p>上述のサンプルでは、ポーリングを避けようとしましたが、ポーリングは非常に単純で、いくつかのケースにおいては唯一の解決策になります。もっとも単純なケースなので、 <code>_changes</code> APIではデフォルトとなっています。
 
 <p>Let’s see what the changes for our test database look like. First, the request (we’re using <code>curl</code> again):
+<p>テストデータベースの変更リストがどのように見えるか見てみましょう。最初に(<code>curl</code>を使って)リクエストします。
 
 <pre>
 curl -X GET $HOST/db/_changes
 </pre>
 
 <p>The result is simple:
+<p>結果は単純です。
 
 <pre>
 {"results":[
@@ -80,18 +102,21 @@ curl -X GET $HOST/db/_changes
 </pre>
 
 <p>There’s nothing there because we didn’t put anything in yet—no surprise. But you can guess where we’d see results—when they start to come in. Let’s create a document:
+<p>驚くことはありません、まだ何もおいていないので、何もないのです。しかし、いつ、どこで結果が見えるようになるか見当がつけられるでしょう。では、ドキュメントを作りましょう。
 
 <pre>
 curl -X PUT $HOST/db/test -d '{"name":"Anna"}'
 </pre>
 
 <p>CouchDB replies:
+<p>CouchDBは次のように返します。
 
 <pre>
 {"ok":true,"id":"test","rev":"1-aaa8e2a031bca334f50b48b6682fb486"}
 </pre>
 
 <p>Now let’s run the changes request again:
+<p>ここで、 <code>_changes</code> をもう一度リクエストしましょう。
 
 <pre>
 {"results":[
@@ -101,8 +126,11 @@ curl -X PUT $HOST/db/test -d '{"name":"Anna"}'
 </pre>
 
 <p>We get a notification about our new document. This is pretty neat! But wait—when we created the document and got information like the revision ID, why would we want to make a request to the changes API to get it again? Remember that the purpose of the changes API is to allow you to build decoupled systems. The program that creates the document is very likely not the same program that requests changes for the database, since it already knows what it put in there (although this is blurry, the same program could be interested in changes made by others).
+<p>新しいドキュメントの通知をうけとることができました。 非常に良いでしょう！ でも、ちょっと待ってください。私たちはドキュメントを作ったときに、既にリビジョンなどの情報は知っています。どうして <code>_changes</code> APIを使ってもう一度取得したかったのでしょうか？ <code>_changes</code> APIの目的が、分離システムを構成できるようにすることであったことを思い出してください。ドキュメントを作成したプログラムは、変更リストを要求するプログラムとは、十中八九、同じものではありません。なぜなら既にドキュメントがデータベースにあることを知っているからです。(曖昧になってしまいますが、同じプログラムでも、他人によって変更が行われた場合は、同じプログラムが変更リストに関心を持つこともありえます。)
+
 
 <p>Behind the scenes, we created another document. Let’s see what the changes for the database look like now:
+<p>戻って、別のドキュメントを作りましょう。すると変更リストは次のようになります。
 
 <pre>
 {"results":[
@@ -113,14 +141,19 @@ curl -X PUT $HOST/db/test -d '{"name":"Anna"}'
 </pre>
 
 <p>See how we get a new line in the result that represents the new document? In addition, the first document we put in there got listed again. The default result for the changes API is the history of all changes that the database has seen.
+<p>新しいドキュメントを表す、新しい行が追加されていることを確認してください。加えて、最初のドキュメントも、リストに含まれています。 <code>_changes</code> API のデフォルトの結果は、データベースができてからの全ての変更リストとなります。
 
 <p>We’ve already seen the change for <code>"seq":1</code>, and we’re no longer really interested in it. We can tell the changes API about that by using the <code>since=1</code> query parameter:
+<p>私たちは、 <code>seq</code> が1の変更リストを既に手に入れていますから、もうそれは必要ないでしょう。クエリパラメーターに <code>since=1</code> をつけることで <code>_change</code> APIにこのことを教えることができます。
+
 
 <pre>
 curl -X GET $HOST/db/_changes?since=1
 </pre>
 
 <p>This returns all changes <em>after</em> the <code>seq</code> specified by <code>since</code>:
+<p><code>_changes</code> APIは、 <code>since</code> によって指定された <code>seq</code> 値以降のすべての変更リストを返すでしょう。
+
 
 <pre>
 {"results":[
@@ -130,14 +163,22 @@ curl -X GET $HOST/db/_changes?since=1
 </pre>
 
 <p>While we’re discussing options, use <code>style=all_docs</code> to get more revision and conflict information in the <code>changes</code> array for each result row. If you want to specify the default explicitly, the value is <code>main_only</code>.
+<p>オプションについて説明を加えておきます。 <code>style=all_docs</code> を使うことで、変更リストのそれぞれの結果の行に、リビジョンとコンフリクト情報をより詳細にいれることができます。デフォルトを明示したければ、 <code>style</code> の値は、<code>main_only</code> です。
+
 
 <h3 id="long">Long Polling</h3>
+<h3 id="long">ロングポーリング</h3>
 
 <p>The technique of long polling was invented for web browsers to remove one of the problems with the regular polling approach: it doesn’t run any requests if nothing changed. Long polling works like this: when making a request to the long polling API, you open an HTTP connection to CouchDB until a new row appears in the changes result, and both you and CouchDB keep the HTTP connection open. As soon as a result appears, the connection is closed.
+<p>ロングポーリングの技術は、ウェブブラウザが通常のポーリングアプローチで起こりうる問題の一つを解決するために発明されました。何も変更がなければリクエストを発生させないようにするのです。ロングポーリングは次のように動作します。ロングポーリング用のAPIにリクエストを行うとき、CouchDBに対して、新しい行が変更リストの結果に表れるまで、あなたもCouchDBもHTTP接続を開きっぱなしにします。新しい行が現れたらすぐに接続を閉じます。
 
 <p>This works well for low-frequency updates. If a lot of changes occur for a client, you find yourself opening many new requests, and the usefulness of this approach over regular polling declines. Another general consequence of this technique is that for each client requesting a long polling change notification, CouchDB will have to keep an HTTP connection open. CouchDB is well capable of doing so, as it is designed to handle many concurrent requests. But you need to make sure your operating system allows CouchDB to use at least as many sockets as you have long polling clients (and a few spare for regular requests, of course).
+<p>これは、更新が頻繁ではないときにうまく動作します。もし、多くの変更が発生するようであれば、多くの新しいリクエストが開始されることに気がつくでしょう。そして、通常のポーリングに対するロングポーリングの優位性は損なわれてしまいます。もう一つ、この技術における一般な影響は、それぞれのクライアントがロングポーリング用の変更通知にリクエストを出している間、CouchDBはHTTP接続を開きっぱなしにしなければならないことでしょう。CouchDBは多くの同時リクエストを処理できるように設計されています。しかし、あなたは、オペレーティングシステムがCouchDBに対してロングポーリングを使用するクライアント数分の(そして、もちろん通常のリクエストを処理するためのいくつかの分の)ソケットを与えられるかどうか確認する必要があります。
+
 
 <p>To make a long polling request, add the <code>feed=longpoll</code> query parameter. For this listing, we added timestamps to show you when things happen.
+<p>ロングポーリングを使うには、 <code>feed=longpoll</code> というクエリパラメーターを付与します。いつ発生したかが分かるように、次のコードにはタイムスタンプを追加しました。
+
 
 <pre>
 00:00: &gt; curl -X GET "$HOST/db/_changes?feed=longpoll&amp;since=2"
@@ -148,20 +189,32 @@ curl -X GET $HOST/db/_changes?since=1
 </pre>
 
 <p>At <code>00:10</code>, we create another document behind your back again, and CouchDB promptly sends us the change. Note that we used <code>since=2</code> to avoid getting any of the previous notifications. Also note that we have to use double quotes for the <code>curl</code> command because we are using an ampersand, which is a special character for our shell.
+<p><code>00:10</code> の時点で、別のドキュメントを作成すると、CouchDBは即座に変更を送信してくれます。 <code>since=2</code> を使用し、以前の通知を取得しないようにしていることに留意してください。そして、curlコマンドにダブルクオートをつけている点も気をつけてください。アンパサンド(&)はシェルの特殊文字だからです。
+
 
 <p>The <code>style</code> option works for long polling requests just like for regular polling requests.
+<p>ロングポーリングリクエストの <code>style</code> オプションは、通常のポーリングリクエストと同様です [#]_ 。
+
 
 <p>Networks are a tricky beast, and sometimes you don’t know whether there are no changes coming or your network connection went stale. If you add another query parameter, <code>heartbeat=<em>N</em></code>, where <em>N</em> is a number, CouchDB will send you a newline character each <em>N</em> milliseconds. As long as you are receiving newline characters, you know there are no new change notifications, but CouchDB is still ready to send you the next one when it occurs.
+<p>ネットワークは油断のならない猛獣です。あなたは、時々、変更リストが返ってこないのか、接続が悪くなっているのかが分からなくなります、 <code>heatbeat=N</code> ( <code>N</code> は数値)を加えれば、CouchDBが改行文字をNミリ秒ごとに送信してくれるでしょう。改行文字を受信し続けている限りは、新しい変更通知がないことがわかります。この場合でも、CouchDBは、新しい変更が発生したらそれをあなたに送信する準備ができています。
+
 
 <h3 id="continuous">Continuous Changes</h3>
 
 <p>Long polling is great, but you still end up opening an HTTP request for each change notification. For web browsers, this is the only way to avoid the problems of regular polling. But web browsers are not the only client software that can be used to talk to CouchDB. If you are using Python, Ruby, Java, or any other language really, you have yet another option.
+<p>ロングポーリングは素晴らしいものですが、それでもなお、それぞれの変更通知についてHTTP接続を開く必要があります。ウェブブラウザにとっては、通常のポーリングの問題を回避する唯一の方法です。しかし、CouchDBと対話するために使われるクライアントソフトウェアはブラウザだけではありません。Python、Ruby、Java あるいはその他の言語を使っているのであれば、もう一つ別の方法があります。
 
 <p>The <em>continuous changes API</em> allows you to receive change notifications as they come in using a single HTTP connection. You make a request to the continuous changes API and both you and CouchDB will hold the connection open “forever.” CouchDB will send you newlines for notifications when the occur and—as opposed to long polling—will keep the HTTP connection open, waiting to send the next notification.
+<p>コンティニュアスによる <code>_changes</code> API を使うことで、単一のHTTP接続で変更通知を受け取ることができます。コンティニュアス用の <code>_changes</code> APIに対してリクエストを発行すると、あなたとCouchDBは接続を永遠に開いたままにします。そしてCouchDBは、新しい行を送信することで変更通知を行い、ーロングポーリングの時とは反対にー HTTP接続を開いたままにし、次の通知を送信するまで待機します。
+
 
 <p>This is great for both infrequent and frequent notifications, and it has the same consequence as long polling: you’re going to have a lot of long-living HTTP connections. But again, CouchDB easily supports these.
+<p>これは変更通知が頻繁に起こるとき、あるいはたまにしか起こらないときのいずれにも有効です。そしてロングポーリングと同様の影響を与えます。つまり、多くの長寿命のHTTP接続を持つことです。しかし、CouchDBはこれを簡単にサポートします。
 
 <p>Use the <code>feed=continuous</code> parameter to make a continuous changes API request. Following is the result, again with timestamps. At <code>00:10</code> and <code>00:15</code>, we’ll create a new document each:
+<p>コンティニュアス用の <code>_changes</code> APIはリクエストに <code>feed=continuous</code> というパラメーターを用います。もう一度、タイムスタンプをつけた結果を示します。 00:10 の時点と 00:15 の時点でそれぞれ新しいドキュメントを作ります。
+
 
 <pre>
 00:00: &gt; curl -X GET "$HOST/db/_changes?feed=continuous&amp;since=3"
@@ -170,12 +223,19 @@ curl -X GET $HOST/db/_changes?since=1
 </pre>
 
 <p>Note that the continuous changes API result doesn’t include a wrapping JSON object with a results member with the individual notification results as array items; it includes only a raw line per notification. Also note that the lines are no longer separated by a comma. Whereas the regular and long polling APIs result is a full valid JSON object when the HTTP request returns, the continuous changes API sends individual rows as valid JSON objects. The difference makes it easier for clients to parse the respective results. The <code>style</code> and <code>heartbeat</code> parameters work as expected with the continuous changes API.
+<p>コンティニュアス用の <code>changes</code> APIの結果は、 <code>results</code> メンバーと各変更通知が配列になっているJSONオブジェクトにラップされてはいないことを確認してください。変更通知は、通知の度に、ごとに、行に無加工で含まれています。そして、各行はコンマ(,)で分割されません。通常のポーリング、あるいはロングポーリングでは、HTTPリクエストが返す結果は完全で有効なJSONオブジェクトですが、コンティニュアス変更通知では、個々の行が有効なJSONオブジェクトを送信します。この違いにより、クライアントは個別の結果をパースしやすくなっています。
+
 
 <h3 id="filters">Filters</h3>
+<h3 id="filters">フィルター</h3>
 
 <p>The change notification API and its three modes of operation already give you a lot of options requesting and processing changes in CouchDB. Filters for changes give you an additional level of flexibility. Let’s say the messages from our first scenario have priorities, and a user is interested only in notifications about messages with a <code>high</code> priority.
+<p><code>_changes</code> APIとその3つの動作モードはCouchDBの変更をリクエストし、処理する方法に様々なオプションを与えてくれるものです。変更に対するフィルタは柔軟性を付与してくれます。最初のシナリオのメッセージにおいて、メッセージが優先度を持っていて、ユーザーは優先度が「高」のメッセージの通知のみに関心があるとしましょう。
+
 
 <p>Enter filters. Similar to view functions, a filter is a JavaScript function that gets stored in a design document and is later executed by CouchDB. They live in special member <code>filters</code> under a name of your choice. Here is an example:
+<p>フィルタに入りましょう。ビュー関数と同じように、１つのフィルタは１つのJavaScript関数で、デザインドキュメントに格納され、CouchDBによって後で実行されます。<code>filters</code>というスペシャルメンバに保存され、好きな名前をつけることができます。例を示します。
+
 
 <pre>
 {
@@ -189,16 +249,22 @@ curl -X GET $HOST/db/_changes?since=1
 </pre>
 
 <p>To query the changes API with this filter, use the <code>filter=designdocname/filtername</code> query parameter:
+<p><code>_changes</code> APIに対して、このフィルタを使ってクエリを行うには、<code>filter=desingdocname/filtername</code> をクエリパラメーターに使います。
+
 
 <pre>
 curl "$HOST/db/_changes?filter=app/important"
 </pre>
 
 <p>The result now includes only rows for document updates for which the filter function returns <code>true</code>—in our case, where the <code>priority</code> property of our document has the value <code>high</code>. This is pretty neat, but CouchDB takes it up another notch.
+<p>これは、フィルタ関数がtrueを返す行のドキュメントの更新のみを結果に含めます。私たちのケースでは、 <code>priority</code> プロパティの値が high の場合です。これは非常に素晴らしいことです。しかし CouchDBはさらに加えます。
+
 
 <p>Let’s take the initial example application where users can send messages to each other. Instead of having a database per user that acts as the inbox, we now use a single database as the inbox for all users. How can a user register for changes that represent a new message being put in her inbox?
+<p>最初の例である、ユーザーが互いにメッセージを送信しあうアプリケーションを取り上げましょう。ユーザー毎に1つのデータベースを持つのではなく、単一のデータベースを全てのユーザーの受信箱とします。ユーザーは受信箱におかれようとしている新しいメッセージを表す変更リストをどうやって取得することができるのでしょうか?
 
 <p>We can make the filter function using a request parameter:
+<p>リクエストパラメーターを使うフィルタ関数を登録することができます。
 
 <pre>
 function(doc, req)
@@ -212,12 +278,19 @@ function(doc, req)
 </pre>
 
 <p>If you now run a request adding a <code>?name=Steve</code> parameter, the filter function will only return result rows for documents that have the <code>name</code> field set to “Steve.” If you are running a request for a different user, just change the request parameter (<code>name=Joe</code>).
+<p>リクエストに、<code>?name=Steve</code>というパラメーターを付け加えれば、フィルタ関数は <code>name</code> フィールドが <code>"Steve"</code>にセットされたドキュメントのみを結果に返すようになります。別のユーザーに対するリクエストを発行する場合は、リクエストパラメーターを(<code>name=Joe</code>のように)変更するだけです。
+
 
 <p>Now, adding a query parameter to a filtered changes request is easy. What would hinder Steve from passing in <code>name=Joe</code> as the parameter and seeing Joe’s inbox? Not much. Can CouchDB help with this? We wouldn’t bring this up if it couldn’t, would we?
+<p>クエリパラメーターをフィルタされた <code>_changes</code> リクエストに追加することは簡単ですが、Steveが <code>name=Joe</code> というパラメーターを渡して、Joeの受信箱を見ようとしないでしょうか？そんなことはないのかもしれませんが、CouchDBはこれに対応できますか？ できなければこんなこといいませんよ。私たちですよ？
+
 
 <p>The <code>req</code> parameter of the filter function includes a member <code>userCtx</code>, the <em>user context</em>. This includes information about the user that has already been authenticated over HTTP earlier in the phase of the request. Specifically, <code>req.userCtx.name</code> includes the username of the user who makes the filtered changes request. We can be sure that the user is who he says he is because he has been authenticated against one of the authenticating schemes in CouchDB. With this, we don’t even need the dynamic filter parameter (although it can still be useful in other situations).
+<p>フィルタ関数の <code>req</code> パラメーターは <code>userCtx</code> というユーザーコンテキストを表すメンバーを持ちます。ユーザーコンテキストにはHTTPリクエストの前のフェーズで認証されたユーザーの情報を含みます。 特に <code>req.userCtx.name</code> にはフィルターを使った <code>_changes</code> リクエストを発行したユーザーの名前が入っています。私たちは、CouchDBの認証スキームの１つを用いることで、ユーザーの身元を保証することができます。これを使えば、動的なフィルタパラメーターは必要すらなくなるでしょう(もちろん、別の場面で役立ちますが)。
+
 
 <p>If you have configured CouchDB to use authentication for requests, a user will have to make an authenticated request and the result is available in our filter function:
+<p>CouchDBがリクエストに対する認証を行うように構成すれば、ユーザーは認証済リクエストを発行しなければならなくなり、結果が次のフィルタ関数で利用可能になります。
 
 <pre>
 function(doc, req)
@@ -233,5 +306,7 @@ function(doc, req)
 </pre>
 
 <h3 id="wrap">Wrapping Up</h3>
+<h3 id="wrap">まとめ</h3>
 
 <p>The changes API lets you build sophisticated notification schemes useful in many scenarios with isolated and asynchronous components yet working to the same beat. In combination with replication, this API is the foundation for building distributed, highly available, and high-performance CouchDB clusters.
+<p><code>_changes</code> API を用いることで、多くのシナリオで有効な、洗練された通知スキームを構築することができます。そして、複数のコンポーネントを、独立、非同期にしつつも、同じ拍子で動作させることができます。レプリケーションと組み合わせることで、このAPIは、分散された、高可用性があり、ハイパフォーマンスなCouchDBクラスターを構築する基盤となります。

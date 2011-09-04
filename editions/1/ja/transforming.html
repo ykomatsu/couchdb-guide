@@ -1,4 +1,4 @@
-<title>リスト機能によるビューの変換</title>
+<title>Transforming Views with List Functions</title>
 
 <meta charset="utf-8">
 
@@ -10,10 +10,13 @@
 
 <script src="../../../script.js"></script>
 
+<h2 id="transforming">Transforming Views with List Functions</h2>
 <h2 id="transforming">リスト機能によるビューの変換</h2>
 
+<p>Just as show functions convert documents to arbitrary output formats, CouchDB <em>list functions</em> allow you to render the output of view queries in any format. The powerful iterator API allows for flexibility to filter and aggregate rows on the fly, as well as output raw transformations for an easy way to make Atom feeds, HTML lists, CSV files, config files, or even just modified JSON.
 <p>ショー機能がドキュメントを任意の出力形式に変換するのとちょうど同じように、CouchDBの<em>リスト機能</em>を使うと、ビュークエリーの出力を任意の形式でレンダリングすることができます。強力なイテレーターAPIは、オンザフライで行をフィルタリングし、集計することだけでなく、AtomフィードやHTMLリスト、CSVファイル、設定ファイル、単に変更されたJSONを生成するための簡単な方法として、生の変換を出力することができるような柔軟性を実現します。
 
+<p>List functions are stored under the <code>lists</code> field of a design document. Here’s an example design document that contains two list functions:
 <p>リスト機能はデザインドキュメントの<code>lists</code>フィールドに保存します。以下に、2つのlist関数を含むデザインドキュメントの例を示します。
 
 <pre>
@@ -27,15 +30,19 @@
 }
 </pre>
 
+<h3 id="arguments">Arguments to the List Function</h3>
 <h3 id="arguments">list関数の引数</h3>
 
+<p>The function is called with two arguments, which can sometimes be ignored, as the row data itself is loaded during function execution. The first argument, <code>head</code>, contains information about the view. Here’s what you might see looking at a JSON representation of <code>head</code>:
 <p>list関数は2つの引数とともに呼ばれます。これらの引数は、関数の実行中に生のデータ自体が読み込まれるときには、無視できることもあります。1つ目の引数である<code>head</code>は、ビューについての情報を持ちます。以下に、目にするかも知れない<code>head</code>のJSON表現を示します。
 
 <pre>
 {total_rows:10, offset:0}
 </pre>
 
+<p>The request itself is a much richer data structure. This is the same request object that is available to show, update, and filter functions. We’ll go through it in detail here as a reference. Here’s the example <code>req</code> object:
 <p>リクエスト自体はもっとリッチなデータ構造です。これはshow関数やupdate関数、filter関数で使うものと同じリクエストオブジェクトです。参照のために、ここで詳細に説明していきます。以下に<code>req</code>オブジェクトの例を示します。
+
 
 <pre>
 {
@@ -45,6 +52,7 @@
     "instance_start_time": "1250046852578425","disk_format_version": 4},
 </pre>
 
+<p>The database information, as available in an information request against a database’s URL, is included in the request parameters. This allows you to stamp rendered rows with an update sequence and know the database you are working with.
 <p>データベースのURLに対する情報のリクエストで利用できるようなデータベースの情報は、リクエストパラメーターに含まれます。これにより、更新シーケンスで行をレンダリングすることを抑止でき、作業しているデータベースを知ることができます。
 
 <pre>
@@ -52,12 +60,14 @@
   "path": ["test_suite_db","_design","lists","_list","basicJSON","basicView"],
 </pre>
 
+<p>The HTTP method and the path in the client from the client request are useful, especially for rendering links to other resources within the application.
 <p>クライアントのリクエストからのHTTPメソッドとパスは、アプリケーション内の他のリソースへのリンクをレンダリングするために、特に便利です。
 
 <pre>
   "query": {"foo":"bar"},
 </pre>
 
+<p>If there are parameters in the query string (in this case corresponding to <code>?foo=bar</code>), they will be parsed and available as a JSON object at <code>req.query</code>.
 <p>クエリー文字列にパラメーターがある場合（このケースでは<code>?foo=bar</code>に当たります)、それらはパースされ、<code>req.query</code>でJSONオブジェクトとして利用できるようになります。
 
 <pre>
@@ -72,6 +82,7 @@
   "cookie": {"_x": "95252s.sd25","AuthSession": ""},
 </pre>
 
+<p>Headers give list and show functions the ability to provide the Content-Type response that the client prefers, as well as other nifty things like cookies. Note that cookies are also parsed into a JSON representation. Thanks, MochiWeb!
 <p>headersはlist関数やshow関数に、クライアントの望むContent-Typeのレスポンスを提供する能力だけではなく、クッキーのようなその他の気の利いた機能を提供する能力も与えます。クッキーもまた、JSON表現にパースされることに注意してください。ありがとう、MochiWeb！
 
 <pre>
@@ -79,6 +90,7 @@
   "form": {},
 </pre>
 
+<p>In the case where the method is <code>POST</code>, the request body (and a form-decoded JSON representation of it, if applicable) are available as well.
 <p>このケースではメソッドは<code>POST</code>ですが、リクエスト本文（と、該当するならばフォームデコードされたJSON表現）もまた利用可能です。
 
 <pre>
@@ -86,23 +98,35 @@
 }
 </pre>
 
+<p>Finally, the <code>userCtx</code> is the same as that sent to the validation function. It provides access to the database the user is authenticated against, the user’s name, and the roles they’ve been granted. In the previous example, you see an anonymous user working with a CouchDB node that is in “admin party” mode. Unless an admin is specified, everyone is an admin.
 <p>最後に、<code>userCtx</code>はバリデーション機能に送られるものと同じです。これは、ユーザー名と許可されたロールとで認証されたユーザーに、データベースへのアクセスを提供します。前の例では、「管理者パーティー」モードになっているCouchDBのノードで作業しているanonymousユーザーがいました。管理者を指定しない限り、全員が管理者になります。
 
+<p>That’s enough about the arguments to list functions. Now it’s time to look at the mechanics of the function itself.
 <p>list関数の引数についてはこれで十分です。さあ、list関数自体の仕組みを見てみましょう。
 
+
+<h3 id="example">An Example List Function</h3>
 <h3 id="example">list関数の例</h3>
 
+<p>Let’s put this knowledge to use. In the chapter introduction, we mentioned using lists to generate config files. One fun thing about this is that if you keep your configuration information in CouchDB and generate it with lists, you don’t have to worry about being able to regenerate it again, because you know the config will be generated by a pure function from your database and not other sources of information. This level of isolation will ensure that your config files can be generated correctly as long as CouchDB is running. Because you can’t fetch data from other system services, files, or network sources, you can’t accidentally write a config file generator that fails due to external factors.
 <p>この知識を使いましょう。この章のイントロダクションで、設定ファイルの生成にリストを使うという話をしました。これの楽しいところは、設定情報をCouchDBに保持しておき、設定ファイルをリストで生成すると、それを再生成することができるかについて心配する必要がなくなるというところです。なぜなら、設定は他の情報源ではなくデータベースから純粋な関数によって生成されるということが分かっているからです。この分離のレベルは、CouchDBが動作している限り、設定ファイルを正常に生成することができるということを保証します。その他のシステムサービスやファイル、ネットワークリソースからデータを取得することができないので、外部要因によって失敗するような設定ファイルのジェネレーターを誤って書いてしまうことができないのです。
+
 
 <div class="aside note">
 
+<p>J. Chris got excited about the idea of using list functions to generate config files for the sort of services people usually configure using CouchDB, specifically via Chef, an Apache-licensed infrastructure automation tool. The key feature of infrastructure automation is that deployment scripts are idempotent—that is, running your scripts multiple times will have the same intended effect as running them once, something that becomes critical when a script fails halfway through. This encourages crash-only design, where your scripts can bomb out multiple times but your data remains consistent, because it takes the guesswork out of provisioning and updating servers in the case of previous failures.
 <p>J. Chrisは、通常CouchDBを使って設定するような種類のサービス、特にApacheライセンスのインフラ自動化ツールのChefの設定ファイルの生成にリスト機能を利用するというアイデアに興奮しました。インフラの自動化の重要な特徴は、デプロイメントスクリプトが等羃であること、つまり、途中で失敗したときに何か重大なことが起きるようなスクリプトを、複数回実行しても1回実行したときと同じように意図した効果が得られるということです。このことから、クラッシュオンリーな、つまり、スクリプトが複数回失敗したとしてもデータの一貫性は維持されるような設計が奨励されます。なぜなら、それによって前回失敗したサーバーのプロビジョニングやアップデートから当て推量を取り除くことができるからです。
 
+
+<p>Like map, reduce, and show functions, lists are pure functions, from a view query and an HTTP request to an output format. They can’t make queries against remote services or otherwise access outside data, so you know they are repeatable. Using a list function to generate an HTTP server configuration file ensures that the configuration is generated repeatably, based on only the state of the database.
 <p>map関数、reduce関数、show関数のように、lists関数はビュークエリーとHTTPリクエストを受けて出力形式を返す、純粋な関数です。それらの関数は、リモートサービスやその他の外部のデータにクエリーを投げたり、外部のデータにアクセスすることはできません。そのため、それらの関数は反復可能だと分かります。list関数を使ってHTTPサーバーの設定ファイルを生成すると、データベースの状態だけに基づいて、設定が繰り返し生成されることが保証されます。
+
 
 </div>
 
+<p>Imagine you are running a shared hosting platform, with one name-based virtual host per user. You’ll need a config file that starts out with some node configuration (which modules to use, etc.) and is followed by one config section per user, setting things like the user’s HTTP directory, subdomain, forwarded ports, etc.
 <p>あなたがユーザーごとに名前ベースの仮想ホストをひとつ提供する共有ホスティングプラットフォームを運営しているところを想像してください。あなたは設定ファイルの最初に、（使用するモジュールなど）いくつかのノードの設定を書いて、次にユーザーのHTTPディレクトリやサブドメイン、フォーワードポートなどのような設定をユーザーごとにひとつの設定セクションとして書く必要があります。
+
 
 <pre>
 function(head, req) {
@@ -112,11 +136,17 @@ function(head, req) {
   send(configHeader);
 </pre>
 
+<p>In the first block of the function, we’re rendering the top of the config file using the function <code>renderTopOfApacheConf(head, req.query.hostname)</code>. This may include information that’s posted into the function, like the internal name of the server that is being configured or the root directory in which user HTML files are organized. We won’t show the function body, but you can imagine that it would return a long multi-line string that handles all the global configuration for your server and sets the stage for the per-user configuration that will be based on view data.
 <p>最初の関数のブロックでは、<code>renderTopOfApacheConf(head, req.query.hostname)</code>を使って設定ファイルの先頭部分をレンダリングしています。ここには、設定されたサーバーの内部名やユーザーのHTMLファイルが構成されるルートディレクトリのような、関数に渡した情報が含まれるかも知れません。関数の本文は示しませんが、サーバのすべてのグローバルな設定やビューデータを基にしたユーザーごとの設定のための段階を配置する、長い複数行の文字列が返されるであろうことは想像できるでしょう。
 
+
+<p>The call to <code>send(configHeader)</code> is the heart of your ability to render text using list functions. Put simply, it just sends an HTTP chunk to the client, with the content of the strings pasted to it. There is some batching behind the scenes, as CouchDB speaks with the JavaScript runner with a synchronous protocol, but from the perspective of a programmer, <code>send()</code> is how HTTP chunks are born.
 <p><code>send(configHeader)</code>の呼び出しは、list関数を使ってテキストをレンダリングする能力の中心です。簡単に言えば、これは単にHTTPチャンクをそれに貼り付けられた文字列の内容とともにクライアントに送信しているだけです。この状況の裏にはCouchDBがJavaScriptランナーと同期プロトコルで通信するというような、いくつかの処理があるのですが、プログラマーの観点からは、<code>send()</code>がHTTPチャンクの生成される理由です。
 
+
+<p>Now that we’ve rendered and sent the file’s head, it’s time to start rendering the list itself. Each list item will be the result of converting a view row to a virtual host’s configuration element. The first thing we do is call <code>getRow()</code> to get a row of the view.
 <p>さあ、ファイルの先頭部分をレンダリングして送信したので、リスト自体のレンダリングを始めましょう。各リスト項目はビューの行を仮想ホストの設定要素に変換した結果です。最初にするのは、ビューの行を得るために<code>getRow()</code>を呼び出すことです。
+
 
 <pre>
   while (row = getRow()) {
@@ -125,9 +155,13 @@ function(head, req) {
   }
 </pre>
 
+<p>The <code>while</code> loop used here will continue to run until <code>getRow()</code> returns null, which is how CouchDB signals to the list function that all valid rows (based on the view query parameters) have been exhausted. Before we get ahead of ourselves, let’s check out what happens when we do get a row.
 <p>ここで使われる<code>while</code>ループは、<code>getRow()</code>がnullを返すまで実行され続けます。nullを返すことで、CouchDBはlist関数にすべての有効な行を使い果たしたことを通知します。先を急ぐ前に、行を取得したときに何が起こるのかを確認してみましょう。
 
+
+<p>In this case, we simply render a string based on the row and send it to the client. Once all rows have been rendered, the loop is complete. Now is a good time to note that the function has the option to return early. Perhaps it is programmed to stop iterating when it sees a particular user’s document or is based on a tally it’s been keeping of some resource allocated in the configuration. In those cases, the loop can end early with a <code>break</code> statement or other method. There’s no requirement for the list function to render every row that is sent to it.
 <p>このケースでは、行を基にして単に文字列をレンダリングし、クライアントに送信するだけです。すべての行がレンダリングされると、ループは完了します。ちょうど良い機会なので、関数には早期に戻るためのオプションがあることに注意しましょう。おそらくそれは、特定のユーザーのドキュメントを見たときか、設定に割り当てられているいくつかのリソースが保持されているという印に基づいて、繰り返しが止まるようにプログラムされます。このような場合、ループは<code>break</code>文かその他の方法で早期に終了します。list関数には、送られたすべての行をレンダリングしなければならないという要件はありません。
+
 
 <pre>
   configFoot = renderConfTail();
@@ -135,62 +169,82 @@ function(head, req) {
 }
 </pre>
 
+<p>Finally, we close out the configuration file and return the final string value to be sent as the last HTTP chunk. The last action of a list function is always to return a string, which will be sent as the final HTTP chunk to the client.
 <p>最後に、設定ファイルを閉じて、最後のHTTPチャンクとして送信されるように最後の文字列の値を返します。list関数の最後の動作は、いつもクライアントに送信する最後のHTTPチャンクとして送信される文字列を返すというものです。
 
+
+<p>To use our config file generation function in practice, we might run a command-line script that looks like:
 <p>私たちの設定ファイル生成関数を実際に使うために、私たちは次のようなコマンドラインスクリプトを実行するかも知れません。
 
 <pre>
 curl http://localhost:5984/config_db/_design/files/_list/apache/users?hostname=foobar &gt; apache.conf
 </pre>
 
+<p>This will render our Apache config based on data in the user’s view and save it to a file. What a simple way to build a reliable configuration generator!
 <p>これは、ユーザーのビューを基に私たちのApacheの設定をレンダリングし、ファイルに保存します。信頼できる設定ジェネレーターをビルドする、なんて簡単な方法でしょう！
 
+<h3 id="theory">List Theory</h3>
 <h3 id="theory">リストの理論</h3>
 
+<p>Now that we’ve seen a complete list function, it’s worth mentioning some of the helpful properties they have.
 <p>完全なlist関数を見てきたので、それの持ついくつかの便利なプロパティーに言及することには価値があります。
 
+<p>The most obvious thing is the iterator-style API. Because each row is loaded independently by calling <code>getRow()</code>, it’s easy not to leak memory. The list function API is capable of rendering lists of arbitrary length without error, when used correctly.
 <p>最も明らかなものは、イテレーター形式のAPIです。各行は<code>getRow()</code>の呼び出しにより独立して読み込まれるので、メモリーリークが発生しないようにするのは簡単です。list関数のAPIを正しく使えば、任意の長さのリストをエラーなしにレンダリングすることができます。
 
+<p>On the other hand, this API gives you the flexibility to bundle a few rows in a single chunk of output, so if you had a view of, say, user accounts, followed by subdomains owned by that account, you could use a slightly more complex loop to build up some state in the list function for rendering more complex chunks. Let’s look at an alternate loop section:
 <p>一方、このAPIを使うと、いくつかの行をひとつの出力のチャンクにまとめるための柔軟性を得られますが、例えば、ユーザーのアカウントが所有するサブドメインの後にそのユーザーアカウントがあるような場合、より複雑なチャンクをレンダリングするためにlist関数中でいくつかの文からなる少し複雑なループを使うこともあります。代わりのループセクションを見てみましょう。
+
 
 <pre>
 var subdomainOwnerRow, subdomainRows = [];
 while (row = getRow()) {
 </pre>
 
+<p>We’ve entered a loop that will continue until we have reached the <code>endkey</code> of the view. The view is structured so that a user profile row is emitted, followed by all of that user’s subdomains. We’ll use the profile data and the subdomain information to template the configuration for each individual user. This means we can’t render any subdomain configuration until we know we’ve received all the rows for the current user.
 <p>ビューの<code>endkey</code>に到達するまで続くループに入ります。このビューは、ユーザーのすべてのサブドメインの後に、そのユーザーのプロファイルの行を出力するよう構成されています。プロファイルのデータとサブドメインの情報を、個々のユーザーのための設定のテンプレートに使用します。これの意味するところは、現在のユーザーのすべての行を受け取るまで、サブドメインの設定はレンダリングできないということです。
+
 
 <pre>
   if (!subdomainOwnerRow) {
     subdomainOwnerRow = row;
 </pre>
 
+<p>This case is true only for the first user. We’re merely setting up the initial conditions.
 <p>このケースは最初のユーザーの場合にだけ真になります。単に初期条件を設定しています。
+
 
 <pre>
   } else if (row.value.user != subdomainOwnerRow.value.user) {
 </pre>
 
+<p>This is the end case. It will be called only after all the subdomain rows for the current user have been exhausted. It is triggered by a row with a mismatched user, indicating that we have all the subdomain rows.
 <p>これは最後のケースです。これは、現在のユーザーのすべてのサブドメインの行が使い果たされた後にのみ呼び出されます。これは、すべてのサブドメインの行が使い果たされたことを示す、現在のユーザーと一致しないユーザーの行を引き金とします。
+
 
 <pre>
     send(renderUserConf(subdomainOwnerRow, subdomainRows));
 </pre>
 
+<p>We know we are ready to render everything for the current user, so we pass the profile row and the subdomain rows to a render function (which nicely hides all the gnarly nginx config details from our fair reader). The result is sent to the HTTP client, which writes it to the config file.
 <p>現在のユーザーのためのすべてをレンダリングする準備ができたことが分かったので、プロファイルの行とサブドメインの行を（ごつごつしたnginxの設定の詳細を公平な読者からうまく隠してくれる）レンダリング関数に渡します。この結果はHTTPクライアントに送信され、HTTPクライアントはそれを設定ファイルに書き込みます。
+
 
 <pre>
     subdomainRows = [];
     subdomainOwnerRow = row;
 </pre>
 
+<p>We’ve finished with that user, so let’s clear the rows and start working on the next user.
 <p>このユーザーについては終わったので、行をクリアーし、次のユーザーの作業を始めましょう。
+
 
 <pre>
   } else {
     subdomainRows.push(row);
 </pre>
 
+<p>Ahh, back to work, collecting rows.
 <p>ああ、作業に戻り、行を収集しましょう。
 
 <pre>
@@ -199,25 +253,39 @@ while (row = getRow()) {
 send(renderUserConf(subdomainOwnerRow, subdomainRows));
 </pre>
 
+<p>This last bit is tricky—after the loop is finished (we’ve reached the end of the view query), we’ve still got to render the last user’s config. Wouldn’t want to forget that!
 <p>この最後の部分はトリッキーです。（最後のビュークエリーに到達し）ループが終わった後、まだ最後のユーザーの設定をレンダリングする必要があります。それを忘れてはいけません！
 
+
+<p>The gist of this loop section is that we collect rows that belong to a particular user until we see a row that belongs to another user, at which point we render output for the first user, clear our state, and start working with the new user. Techniques like this show how much flexibility is allowed by the list iterator API.
 <p>このループセクションの要点は、他のユーザーに所属する行を見るまで、特定のユーザーに所属する行を収集するということです。そのときに、最初のユーザーの出力をレンダリングし、状態をクリアーし、新しいユーザーについて作業を始めます。このようなテクニックから、リストイテレーターAPIには十分な柔軟性があるということが分かります。
 
+<p>More uses along these lines include filtering rows that should be hidden from a particular result set, finding the top <em>N</em> grouped reduce values (e.g., to sort a tag cloud by popularity), and even writing custom reduce functions (as long as you don’t mind that reductions are not stored incrementally).
 <p>特定の結果セットから隠される、フィルタリングされた行を含むこれらの行は、（例えば、タグクラウドを人気度でソートするための）上位<em>N</em>グループのreduce値を見付けたり、（reduce結果がインクリメンタルに保存されないことを気にしないのであれば）カスタマイズされたreduce関数を書いたりするために使われます。
 
+
+<h3 id="querying">Querying Lists</h3>
 <h3 id="querying">リストのクエリー</h3>
 
+<p>We haven’t looked in detail at the ways list functions are queried. Just like show functions, they are resources available on the design document. The basic path to a list function is as follows:
 <p>list関数がクエリーを受ける方法の詳細を見ていません。ちょうどshow関数と同じように、list関数はデザインドキュメントで利用可能なリソースです。list関数への基本的なパスは次の通りです。
+
 
 <pre>
 /db/_design/foo/_list/list-name/view-name
 </pre>
 
+<p>Because the list name and the view name are both specified, this means it is possible to render a list against more than one view. For instance, you could have a list function that renders blog comments in the Atom XML format, and then run it against both a global view of recent comments as well as a view of recent comments by blog post. This would allow you to use the same list function to provide an Atom feed for comments across an entire site, as well as individual comment feeds for each post.
 <p>リスト名とビュー名とは指定されているので、これはひとつ以上のビューに対するリストをレンダリングすることができるということを意味します。例えば、ブログのコメントをAtom XML形式でレンダリングするlist関数を持ち、そしてそれを最近のコメントのグローバルビューに対して実行するのみならず、個々のブログの投稿への最近のコメントのビューに対して実行することもできます。これにより、サイト全体のコメントのAtomフィードを提供するだけでなく、各投稿の個々のコメントフィードを提供するためにも、同じlist関数を使うことができるようになります。
 
+
+<p>After the path to the list comes the view query parameter. Just like a regular view, calling a list function without any query parameters results in a list that reflects every row in the view. Most of the time you’ll want to call it with query parameters to limit the returned data.
 <p>listへのパスの後にはビュークエリーパラメーターが続きます。ちょうど通常のビューと同じように、クエリーパラメーターなしでlist関数を呼び出すと、その結果はビューのすべての行を反映するリストになります。クエリーパラメーターとともにlist関数を呼び出す場合の多くは、返ってくるデータを制限したいときでしょう。
 
+
+<p>You’re already familiar with the view query options from <a href="views.html">Chapter 6, Finding Your Data with Views</a>. The same query options apply to the <code>_list</code> query. Let’s look at URLs side by side; see <a href="#example/1">Example 1, “A JSON view query”</a>.
 <p>ビュークエリーオプションについては、<a href="views.html">「6章 ビューによるデータの検索」</a>ですでに慣れているでしょう。同じクエリーオプションが<code>_list</code>に適用されます。URLを並べて見てみましょう。<a href="#example/1">例1・JSONビュークエリー</a>を参照してください。
+
 
 <div class="figure" id="example/1">
 
@@ -225,10 +293,12 @@ send(renderUserConf(subdomainOwnerRow, subdomainRows));
 GET /db/_design/sofa/_view/recent-posts?descending=true&amp;limit=10
 </pre>
 
+<p class="caption">Example 1. A JSON view query
 <p class="caption">例1・JSONビュークエリー
 
 </div>
 
+<p>This view query is just asking for the 10 most recent blog posts. Of course, this query could include parameters like <code>startkey</code> or <code>skip</code>—we’re leaving them out for simplicity. To run the same query through a list function, we access it via the list resource, as shown in <a href="#example/2">Example 2, “The HTML list query”</a>.
 <p>このビュークエリーは単に最新の10件のブログの投稿を要求するものです。もちろん、このクエリーには<code>startkey</code>や<code>skip</code>のようなパラメーターを含めることができますが、ここでは単純にするために省略しています。同じクエリーをlist関数に対して実行するには、<a href="#example/2">「例2 HTMLリストクエリー」</a>で示すように、リストリソースを通じてアクセスします。
 
 <div class="figure" id="example/2">
@@ -237,11 +307,14 @@ GET /db/_design/sofa/_view/recent-posts?descending=true&amp;limit=10
 GET /db/_design/sofa/_list/index/recent-posts?descending=true&amp;limit=10
 </pre>
 
+<p class="caption">Example 2. The HTML list query
 <p class="caption">例2・HTMLリストクエリー
 
 </div>
 
+<p>The <code>index</code> list here is a function from JSON to HTML. Just like the preceding view query, additional query parameters can be applied to paginate through the list. As we’ll see in <a href="index.html#part/iii">Part III, “Example Application”</a>, once you have a working list, adding pagination is trivial. See <a href="#example/3">Example 3, “The Atom list query”</a>.
 <p>ここでの<code>index</code>リストはJSONからHTMLへの変換関数です。ちょうど前述のビュークエリーと同じように、追加のクエリーパラメーターを使ってリストをページ分割することができます。<a href="index.html#part/iii">「第3部 サンプルアプリケーション」</a>で見るように、動作するリストがあればページ分割を追加するのは簡単なことです。<a href="#example/3">「例3 Atomリストクエリー」</a>を参照してください。
+
 
 <div class="figure" id="example/3">
 
@@ -249,12 +322,16 @@ GET /db/_design/sofa/_list/index/recent-posts?descending=true&amp;limit=10
 GET /db/_design/sofa/_list/index/recent-posts?descending=true&amp;limit=10&amp;format=atom
 </pre>
 
+<p class="caption">Example 3. The Atom list query
 <p class="caption">例3・Atomリストクエリー
 
 </div>
 
+<p>The list function can also look at the query parameters and do things like switch that output to render based on parameters. You can even do things like pass the username into the list using a query parameter (but it’s not recommended, as you’ll ruin cache efficiency).
 <p>list関数はクエリーパラメーターも見ることができ、パラメーターに基づいてレンダリングの出力を切り替えるようなこともできます。クエリーパラメーターを使って、ユーザー名をリストに渡すようなことさえできます（しかしキャッシュ効率が台なしになるので、これはお勧めしません）。
 
-<h3 id="caching">リスト、Etag、キャッシング</h3>
 
+<h3 id="caching">Lists, Etags, and Caching</h3>
+
+<p>Just like show functions and view queries, lists are sent with proper HTTP Etags, which makes them cacheable by intermediate proxies. This means that if your server is starting to bog down in list-rendering code, it should be possible to relieve load by using a caching reverse proxy like Squid. We won’t go into the details of Etags and caching here, as they were covered in <a href="show.html">Chapter 8, Show Functions</a>.
 <p>ちょうどshow関数やビュークエリーと同じように、リストは適切なHTTP Etagとともに送信されます。これにより、中間プロキシーによってキャッシュすることができるようになります。これは、リストレンダリングのコードでサーバーが行き詰まりはじめた場合、Squidのようなキャッシングリバースプロキシーを使うことで負荷を軽減することができるということを意味します。Etagとキャッシングの詳細についてはここでは説明しませんが、これらは<a href="show.html">「第8章 ショー機能」</a>でカバーしています。

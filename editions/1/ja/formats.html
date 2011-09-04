@@ -11,12 +11,16 @@
 <script src="../../../script.js"></script>
 
 <h2 id="formats">Showing Documents in Custom Formats</h2>
+<h2 id="formats">任意の書式によるドキュメントの表示</h2>
 
 <p>CouchDB’s show functions are a RESTful API inspired by a similar feature in Lotus Notes. In a nutshell, they allow you to serve documents to clients, in any format you choose.
+<p>CouchDBのshow関数はRESTfulなAPIであり、Lotus Notesの影響を受けています。つまり、ドキュメントを好きな体裁でクライアントに表示させることができるのです。
 
 <p>A show function builds an HTTP response with any Content-Type, based on a stored JSON document. For Sofa, we’ll use them to show the blog post permalink pages. This will ensure that these pages are indexable by search engines, as well as make the pages more accessible. Sofa’s show function displays each blog post as an HTML page, with links to stylesheets and other assets, which are stored as attachments to Sofa’s design document.
+<p>show関数はJSON形式のドキュメントを基にして、どんなContent-TypeであってもHTTPのリクエスト結果として返すことができます。Sofaの場合は、この特徴をパーマネントリンクを備えたブログ記事を表示させるときに使用しています。こうすれば、ブログの記事は検索エンジンの対象に含まれ、アクセス数の向上が期待できます。
 
 <p>Hey, this is great—we’ve rendered a blog post! See <a href="#figure/1">Figure 1, “A rendered post”</a>.
+<p>これはとても素晴らしいことです。CouchDB単体でブログの記事をレンダリングできるのです！！
 
 <div class="figure" id="figure/1">
 
@@ -27,8 +31,10 @@
 </div>
 
 <p>The complete show function and template will render a static, cacheable resource that does not depend on details about the current user or anything else aside from the requested document and Content-Type. Generating HTML from a show function will not cause any side effects in the database, which has positive implications for building simple scalable applications.
+<p>show関数をうまく使えば、静的でキャッシュが効くリソースをレンダリングしてくれます。ユーザーや要求されたドキュメント、Content-Type によってshow関数の挙動が変わることはありません。show関数を利用してHTMLを生成すると、スケーラブルなアプリケーションができるメリットこそあれ、データベースに影響を及ぼすようなリスクはありません。
 
 <h3 id="rendering">Rendering Documents with Show Functions</h3>
+<h3 id="rendering">show関数でドキュメントをレンダリングする</h3>
 
 <p>Let’s look at the source code. The first thing we’ll see is the JavaScript function body, which is very simple—it simply runs a template function to generate the HTML page. Let’s break it down:
 
@@ -41,8 +47,10 @@ function(doc, req) {
 </pre>
 
 <p>We’re familiar with the <code>!code</code> and <code>!json</code> macros from <a href="documents.html">Chapter 12, Storing Documents</a>. In this case, we’re using them to import a template and some metadata about the blog (as JSON data), as well as to include link and template rendering functions as inline code.
+<p>!codeと!jsonのマクロについてはデザインドキュメントを管理する章ですでに紹介しました。ブログ(JSONのデータとして)に関するテンプレートやメタデータを読み込んで、コード上に展開しています。
 
 <p>Next, we render the template:
+<p>次はテンプレートをレンダリングしています。
 
 <pre>
   return template(templates.post, {
@@ -54,6 +62,7 @@ function(doc, req) {
 </pre>
 
 <p>The blog post title, HTML body, author, and date are taken from the document, with the blog’s title included from its JSON value. The next three calls all use the <code>path.js</code> library to generate links based on the request path. This ensures that links within the application are correct.
+<p>ブログの記事に付けられたタイトル、内容、著者と日付がドキュメントから抜き出されます。次の三行では関数が書かれていますが、これらはパスの要求に基づいたリンクを生成するpath.jsというライブラリから呼び出しています。アプリケーションが正しく稼動していることはこのリンクを確認することでわかります。
 
 <pre>
     assets : assetPath(),
@@ -64,14 +73,19 @@ function(doc, req) {
 </pre>
 
 <p>So we’ve seen that the function body itself just calculates some values (based on the document, the request, and some deployment specifics, like the name of the database) to send to the template for rendering. The real action is in the HTML template. Let’s take a look.
+<p>上記の関数は単に多少計算した後に値(ドキュメントや要求、データベースの名前といったデプロイ時のルールに従ってできた値)をレンダリングのためにテンプレートへ渡しているに過ぎないことがわかったと思います。実際に表示する内容を決定する部分はHTMLのテンプレートにあります。次を見てみましょう。
 
 <h4 id="template">The Post Page Template</h4>
+<h4 id="template">投稿ページのテンプレート</h4>
 
 <p>The template defines the output HTML, with the exception of a few tags that are replaced with dynamic content. In Sofa’s case, the dynamic tags look like <code>&lt;%= replace_me %&gt;</code>, which is a common templating tag delimiter.
+<p>テンプレートでは出力結果となるHTMLファイルを定義しています。その中で、動的に内容が変わるものについてはタグを埋め込んでおいて後で変更するようにしているのです。Sofaではタグを<%= replace_me %>のように表現します。タグで囲む点は他のいくつかの記法と似ていると思います。
 
 <p>The template engine used by Sofa is adapted from John Resig’s blog post, <a href="http://ejohn.org/blog/javascript-micro-templating/">“JavaScript Micro-Templating”</a>. It was chosen as the simplest one that worked in the server-side context without modification. Using a different template engine would be a simple exercise.
+<p>テンプレートエンジンにはJohn Resigさんのブログにあった `JavaScript Micro-Templateing <http://ejohn.org/blog/javascript-micro-templating/>`_ という方法を採用しています。サーバー側に設定を変更する必要もなく、シンプルな方法だったので採用しました。違ったテンプレートエンジンを自分で使ってみるのも練習になっていいと思います。
 
 <p>Let’s look at the template string. Remember that it is included in the JavaScript using the CouchApp <code>!json</code> macro, so that CouchApp can handle escaping it and including it to be used by the templating engine.
+<p>テンプレートの文字列を見てみましょう。テンプレートはCouchAppの!jsonマクロとしてJavaScriptで書かれています。CouchAppを操作する時点でテンプレートの取り込みをどうするかを決めることができます。
 
 <pre>
 &lt;!DOCTYPE html&gt;
@@ -81,12 +95,14 @@ function(doc, req) {
 </pre>
 
 <p>This is the first time we’ve seen a template tag in action—the blog post title, as well as the name of the blog as defined in <code>blog.json</code> are both used to craft the HTML <code>&lt;title&gt;</code> tag.
+<p>最初に見るテンプレートのタグは投稿内容のタイトルになるでしょう。blog.jsonの中で定義されており、HTMLにレンダリングするときもそのまま<title>タグとして利用されます。
 
 <pre>
     &lt;link rel="stylesheet" href="../../screen.css" type="text/css"&gt;
 </pre>
 
 <p>Because show functions are served from within the design document path, we can link to attachments on the design document using relative URIs. Here we’re linking to <code>screen.css</code>, a file stored in the <code>_attachments</code> folder of the Sofa source directory.
+<p>show関数はデザインドキュメントの一部として保存されているため、同じデザインドキュメント内の添付ファイルを容易に取り込むことができます。ここではscreen.cssというファイルを_atttachmentフォルダから取り込んでいます。
 
 <pre>
   &lt;/head&gt;
@@ -97,6 +113,7 @@ function(doc, req) {
 </pre>
 
 <p>Again, we’re seeing template tags used to replace content. In this case, we link to the edit page for this post, as well as to the index page of the blog.
+<p>テンプレートにあるタグを再び見てみましょう。ブログのインデックスページへのリンクと同じように、この投稿を編集するページへのリンクを設定しています。
 
 <pre>
     &lt;/div&gt;
@@ -107,6 +124,7 @@ function(doc, req) {
 </pre>
 
 <p>The post title is used for the <code>&lt;h1&gt;</code> tag, and the date is rendered in a special tag with a class of <code>date</code>. See <a href="#dates">the section called “Dynamic Dates”</a> for an explanation of why we output static dates in the HTML instead of rendering a user-friendly string like “3 days ago” to describe the date.
+<p>タイトルには<code>&lt;h1&gt;</code>タグが自動的に入ります。日付には日付用に用意したCSSのクラスが適用されます。この章の最後の節では、動的な日付を取り扱っています。"三日前の記事"というように、ユーザーにとってより分かりやすい表現をせずに、htmlに静的な日付を埋め込む試みについて書いています。
 
 <pre>
         &lt;div class="body"&gt;&lt;%= post %&gt;&lt;/div&gt;
@@ -117,12 +135,16 @@ function(doc, req) {
 </pre>
 
 <p>In the close of the template, we render the post HTML (as converted from Markdown and saved from the author’s browser).
+<p>あとはpostというタグがユーザーの書いた記事に置き換わります(保存ボタンを押されて、Markdown記法からhtmlへ変換されたもの)。
 
 <h3 id="dates">Dynamic Dates</h3>
+<h3 id="dates">動的な日付</h3>
 
 <p>When running CouchDB behind a caching proxy, this means each show function should have to be rendered only once per updated document. However, it also explains why the timestamp looks like <code>2008/12/25 23:27:17 +0000</code> instead of “9 days ago.”
+<p>CouchDBの前にプロキシサーバーがあって、キャッシュが有効である場合、show関数はドキュメントの更新がある度に新しくhtmlをレンダリングしなければなりません。そのため、サーバー側のJavaScriptでは日付データは"9日前"といった表現をせずに、2008/12/25 23:27:17 +0000といったように正確なタイムスタンプで出力する必要があります。
 
 <p>It also means that for presentation items that depend on the current time, or the identity of the browsing user, we’ll need to use client-side JavaScript to make dynamic changes to the final HTML.
+<p>現在の時刻やユーザー独自の設定に依存する内容を表現する場合はクライアント側のJavaScriptで動的に処理したほうがよいでしょう。
 
 <pre>
     $('.date').each(function() {
@@ -131,3 +153,4 @@ function(doc, req) {
 </pre>
 
 <p>We include this detail about the browser-side JavaScript implementation not to teach you about Ajax, but because it epitomizes the kind of thinking that makes sense when you are presenting documents to client applications. CouchDB should provide the most useful format for the document, as requested by the client. But when it comes time to integrate information from other queries or bring the display up-to-date with other web services, by asking the client’s application to do the lifting, you move computing cycles and memory costs from CouchDB to the client. Since there are typically many more clients than CouchDBs, pushing the load back to the clients means each CouchDB can serve more users.
+<p>Ajaxに関する解説はしていませんが、クライアント側のJavaScriptも例として取り上げました。ただ、クライアント側でドキュメントを表示させるための典型的な内容であるためさほど敷居は高くないと思います。CouchDBではクライアントの要求に従ってドキュメントにとって最適な書式を提供することが理想ですが、様々な問い合わせや他のWEBアプリケーションと共存して画面に表示される場合など、UIの部分はユーザーの環境により異なることがあるためサーバー側で対処しきれないことがあります。そのときはクライアント側の処理はクライアント側で実行してもらうということも選択肢としてあります。一般的にはCouchDBのサーバーよりも、ユーザーの数の方が大きいでしょう。クライアント側の処理を増やせば、同じスペックのサーバーでも余裕が出てき、結果としてより多くのユーザーに対応できるようになります。

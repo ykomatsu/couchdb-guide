@@ -23,7 +23,7 @@
 <h3 id="relax">リラックスして下さい</h3>
 
 <p>If there’s one word to describe CouchDB, it is <em>relax</em>. It is in the title of this book, it is the byline to CouchDB’s official logo, and when you start CouchDB, you see:
-<p>CouchDB を一言であらわすなら、 *リラックス* です。本書のタイトル、公式ロゴの横にもありますし、、CouchDBを起動したときにも見ることができます：
+<p>CouchDB を一言であらわすなら、<em>リラックス</em>です。本書のタイトル、公式ロゴの横にもありますし、CouchDBを起動したときにも見ることができます：
 
 
 <pre>
@@ -37,13 +37,13 @@ Apache CouchDB has started. Time to relax. (CouchDBが起動しました。リ�
 <p>なぜリラックスすることが大切なのでしょうか？ 開発者の生産性はこの５年でおよそ２倍になりました。最大の理由は、より強力なツールが簡単に使えるようになったからです。たとえば Ruby on Rails です。これはとても複雑なフレームワークですが、使うのは簡単です。Rails は簡単に使えることを最優先して作られたから成功したのです。これが CouchDB がリラックスを掲げている理由のひとつです。つまり、Webで全てを済ませている人なら、CouchDBを学ぶだけで中核の考え方を自然と理解できるようになるでしょう。そして、技術畑でない人にも簡単に理解してもらえることでしょう。
 
 <p>Getting out of the way when creative people try to build specialized solutions is in itself a core feature and one thing that CouchDB aims to get right. We found existing tools too cumbersome to work with during development or in production, and decided to focus on making CouchDB easy, even a pleasure, to use. Chapters <a href="tour.html">3</a> and <a href="api.html">4</a> will demonstrate the intuitive HTTP-based REST API.
-<p>他に方法がなくて、創造力あふれる人たちがあることに特化しようとしたときに CouchDB はそこに当てはまることを目的にしています。こういうとき、開発の間中もしくはサービス中に既存のツールでやっていくのはかなり面倒です。そこで、CouchDB をより簡単に扱えるようにし、場合によっては楽しくなるようにしようと決めました。「さあ、始めよう」「Core API」の章で、直観的なHTTPベースのREST APIをお見せします。
+<p>他に方法がなくて、創造力あふれる人たちがあることに特化しようとしたときに CouchDB はそこに当てはまることを目的にしています。こういうとき、開発の間中もしくはサービス中に既存のツールでやっていくのはかなり面倒です。そこで、CouchDB をより簡単に扱えるようにし、場合によっては楽しくなるようにしようと決めました。<a href="tour.html">「さあ、始めよう」</a><a href="api.html">「Core API」</a>の章で、直観的なHTTPベースのREST APIをお見せします。
 
 <p>Another area of relaxation for CouchDB users is the production setting. If you have a live running application, CouchDB again goes out of its way to avoid troubling you. Its internal architecture is fault-tolerant, and failures occur in a controlled environment and are dealt with gracefully. Single problems do not cascade through an entire server system but stay isolated in single requests.
 <p>CouchDB ユーザのためのもうひとつのリラックスは、本番での設定です。もしアプリケーションが稼働中のとき、CouchDB はトラブルを避ける方法があります。内部構造はフォールト・トレラントで、故障はコントロールされた状況でしか起きず、慎重に処理されます。問題がひとつだけならサーバーシステム全体に影響を及ぼすことなく、そのリクエストの失敗だけで済みます。
 
 <p>CouchDB’s core concepts are simple (yet powerful) and well understood. Operations teams (if you have a team; otherwise, that’s you) do not have to fear random behavior and untraceable errors. If anything should go wrong, you can easily find out what the problem is—but these situations are rare.
-<p>CouchDB の中核の考え方はシンプルで（だからこそ強力）、理解しやすいものです。運用チーム（いなければあなた）は、不安定な動作や追跡できないエラーに怯える必要はありません。もし何かがおかしければ簡単に問題を発見するができますが、そんなことはほとんど起きないでしょう。
+<p>CouchDB の中核の考え方はシンプルで（だからこそ強力）、理解しやすいものです。運用チーム（いなければあなた）は、不安定な動作や追跡できないエラーに怯える必要はありません。もし何かがおかしければ簡単に問題を発見することができますが、そんなことはほとんど起きないでしょう。
 
 
 <p>CouchDB is also designed to handle varying traffic gracefully. For instance, if a website is experiencing a sudden spike in traffic, CouchDB will generally absorb a lot of concurrent requests without falling over. It may take a little more time for each request, but they all get answered. When the spike is over, CouchDB will work with regular speed again.
@@ -71,7 +71,7 @@ Apache CouchDB has started. Time to relax. (CouchDBが起動しました。リ�
 
 <blockquote>
 
-<p>"DjangoはWebの *ために* 作られたけど、CouchDBはWeb *で* 作られた。HTTPの背景にある哲学を完全に包含したソフトウェアを今まで見たことがなかった。DjangoにくらべてASPが古く見えるように、CouchDBをみていると、Djangoが古く見えてしまうよ"
+<p>"DjangoはWebの<em>ために</em>作られたけど、CouchDBはWeb<em>で</em>作られた。HTTPの背景にある哲学を完全に包含したソフトウェアを今まで見たことがなかった。DjangoにくらべてASPが古く見えるように、CouchDBをみていると、Djangoが古く見えてしまうよ"
 
 <p class="attribution">&mdash;Jacob Kaplan-Moss, Django開発者
 
@@ -84,7 +84,7 @@ Apache CouchDB has started. Time to relax. (CouchDBが起動しました。リ�
 <h3 id="better">ふつうのアプリケーションにとてもフィット</h3>
 
 <p>We write software to improve our lives and the lives of others. Usually this involves taking some mundane information—such as contacts, invoices, or receipts—and manipulating it using a computer application. CouchDB is a great fit for common applications like this because it embraces the natural idea of evolving, self-contained documents as the very core of its data model.
-<p>私たちがソフトウェアを作るのは、自分たちやみなさんの生活をよりよくするためです。これはふつう何を指すかというと、住所録や、請求書（納品書） [#f1]_ 、領収書といったありきたりな情報を扱ったり、コンピューターソフトウェアを使ってそれを扱うことです。CouchDBは変化する自己完結したドキュメントをデータモデルの中心に置いているため、こういったふつうのアプリケーションを構築するのに非常に適しています。
+<p>私たちがソフトウェアを作るのは、自分たちやみなさんの生活をよりよくするためです。これはふつう何を指すかというと、住所録や、請求書（納品書）、領収書といったありきたりな情報を扱ったり、コンピューターソフトウェアを使ってそれを扱うことです。CouchDBは変化する自己完結したドキュメントをデータモデルの中心に置いているため、こういったふつうのアプリケーションを構築するのに非常に適しています。
 
 <h4 id="containment">Self-Contained Data</h4>
 <h4 id="containment">自己記述的データ</h4>
@@ -97,15 +97,15 @@ Apache CouchDB has started. Time to relax. (CouchDBが起動しました。リ�
 <img src="why/01.png">
 
 <p class="caption">Figure 1. Self-contained documents
-<p class="caption">自己完結したドキュメント
+<p class="caption">図1 自己完結したドキュメント
 
 </div>
 
 <p>Yet using references is exactly how we model our data in a relational database! Each invoice is stored in a table as a row that refers to other rows in other tables—one row for seller information, one for the buyer, one row for each item billed, and more rows still to describe the item details, manufacturer details, and so on and so forth.
-<p>つまり、これがまさに我々のデータをRDBMSにモデリングする方法なのです！全ての請求書はひとつのテーブルの行として格納され、他のテーブルの他の行を参照します。ひとつの列は請求元の情報、もうひとつは請求先、ひとつの列は購入・支払された商品、そして生産元など商品の詳細のためのまだまだ多くの列があったりする。
+<p>つまり、これがまさに我々のデータをRDBMSにモデリングする方法なのです！全ての請求書はひとつのテーブルの行として格納され、他のテーブルの他の行を参照します。ひとつの列は請求元の情報、もうひとつは請求先、ひとつの列は購入・支払された商品、そして生産元など商品の詳細のためのまだまだ多くの列があったりします。
 
 <p>This isn’t meant as a detraction of the relational model, which is widely applicable and extremely useful for a number of reasons. Hopefully, though, it illustrates the point that sometimes your model may not “fit” your data in the way it occurs in the real world.
-<p>リレーショナルモデルを避難するつもりではなく、リレーショナルモデルもいろいろな理由から広く応用ができます。しかし、願わくば、あなたのリレーショナルモデルはしばしば、あなたのデータに適しているとは限らないことが分かるでしょうか。
+<p>リレーショナルモデルを非難するつもりではなく、リレーショナルモデルもいろいろな理由から広く応用ができます。しかし、願わくば、あなたのリレーショナルモデルはしばしば、あなたのデータに適しているとは限らないことが分かるでしょうか。
 
 <p>Let’s take a look at the humble contact database to illustrate a different way of modeling data, one that more closely “fits” its real-world counterpart—a pile of business cards. Much like our invoice example, a business card contains all the important information, right there on the cardstock. We call this “self-contained” data, and it’s an important concept in understanding document databases like CouchDB.
 <p>こんどは小さなアドレス帳についてみてみましょう。実世界の対象によりフィットするデータモデリングの別の方法を描き出してみましょう。名刺の束です。請求書の例のように、名刺には重要な情報が全て載っており、カード入れに積まれています。これを自己完結したデータとよびます。CouchDBのようなドキュメントデータベースでは重要な概念です。
@@ -114,16 +114,16 @@ Apache CouchDB has started. Time to relax. (CouchDBが起動しました。リ�
 <h4 id="information">シンタックスとセマンティクス</h4>
 
 <p>Most business cards contain roughly the same information—someone’s identity, an affiliation, and some contact information. While the exact form of this information can vary between business cards, the general information being conveyed remains the same, and we’re easily able to recognize it as a business card. In this sense, we can describe a business card as a <em>real-world document</em>.
-<p>大抵の場合名刺は、氏名、所属、連絡先、どれも似たような情報を掲載しています。こういった情報のフォーマットは名刺によっていろいろ変わりますが、掲載されている大まかな内容はどれも同じなので、見ればすぐに名刺だとわかります。こういう意味で、名刺は *実世界のドキュメント* だといえます。
+<p>大抵の場合名刺は、氏名、所属、連絡先、どれも似たような情報を掲載しています。こういった情報のフォーマットは名刺によっていろいろ変わりますが、掲載されている大まかな内容はどれも同じなので、見ればすぐに名刺だとわかります。こういう意味で、名刺は<em>実世界のドキュメント</em>だといえます。
 
 <p>Jan’s business card might contain a phone number but no fax number, whereas J. Chris’s business card contains both a phone and a fax number. Jan does not have to make his lack of a fax machine explicit by writing something as ridiculous as “Fax: None” on the business card. Instead, simply omitting a fax number implies that he doesn’t have one.
-<p>ジャンの名刺は電話番号はあるけどFAX番号はない。クリスの名刺は電話番号もFAX番号も載っています。ジャンの場合、名刺に「FAX:空欄」などとヘンなことを明示的に書く必要はありません [#f2]_ 。代わりに、FAX欄を載せないことで、FAXがないことを暗黙のうちに示すことができます。
+<p>ジャンの名刺は電話番号はあるけどFAX番号はない。クリスの名刺は電話番号もFAX番号も載っています。ジャンの場合、名刺に「FAX:空欄」などとヘンなことを明示的に書く必要はありません。代わりに、FAX欄を載せないことで、FAXがないことを暗黙のうちに示すことができます。
 
 <p>We can see that real-world documents of the same type, such as business cards, tend to be very similar in <em>semantics</em>—the sort of information they carry—but can vary hugely in <em>syntax</em>, or how that information is structured. As human beings, we’re naturally comfortable dealing with this kind of variation.
-<p>名刺のように同じ形式の実世界のドキュメントは、載っている情報などの *セマンティクス* 上は非常によく似ていますが、情報が表示される構成、つまり *シンタックス* では大きく異なってしまいます。
+<p>名刺のように同じ形式の実世界のドキュメントは、載っている情報などの<em>セマンティクス</em>上は非常によく似ていますが、情報が表示される構成、つまり<em>シンタックス</em>では大きく異なってしまいます。
 
 <p>While a traditional relational database requires you to model your data <em>up front</em>, CouchDB’s schema-free design unburdens you with a powerful way to aggregate your data <em>after the fact</em>, just like we do with real-world documents. We’ll look in depth at how to design applications with this underlying storage paradigm.
-<p>伝統的なRDBMSではデータを *事前に明示的に* モデリングする必要がありますが、CouchDBのスキーマフリーな設計は、我々が実世界ドキュメントでやっているような現実に即してあなたのデータを *後で* まとめる強力な手法で、モデリングに関するあなたの肩の荷を軽くしてくれます。このようなストレージ・パラダイムの上でどのようにアプリケーションを設計してくかをこれから詳しく見ていきましょう。
+<p>伝統的なRDBMSではデータを<em>事前に明示的に</em>モデリングする必要がありますが、CouchDBのスキーマフリーな設計は、我々が実世界ドキュメントでやっているような現実に即してあなたのデータを<em>後で</em>まとめる強力な手法で、モデリングに関するあなたの肩の荷を軽くしてくれます。このようなストレージ・パラダイムの上でどのようにアプリケーションを設計してくかをこれから詳しく見ていきましょう。
 
 <h3 id="blocks">Building Blocks for Larger Systems</h3>
 <h3 id="blocks">システム拡大のための構成要素</h3>
@@ -145,7 +145,7 @@ Apache CouchDB has started. Time to relax. (CouchDBが起動しました。リ�
 <img src="why/02.png">
 
 <p class="caption">Figure 2. Throughput, latency, or concurrency
-<p class="caption">Figure 2. スループット、レイテンシ、並列性
+<p class="caption">図2 スループット、レイテンシ、並列性
 
 </div>
 
@@ -154,7 +154,7 @@ Apache CouchDB has started. Time to relax. (CouchDBが起動しました。リ�
 <img src="why/03.png">
 
 <p class="caption">Figure 3. Scaling: read requests, write requests, or data
-<p class="caption">Figure 3. スケーリング：リード、ライト、データ
+<p class="caption">図3 スケーリング：リード、ライト、データ
 
 </div>
 
@@ -212,10 +212,10 @@ Apache CouchDB has started. Time to relax. (CouchDBが起動しました。リ�
 <h3 id="local">ローカルデータこそ重要</h3>
 
 <p>CouchDB takes quite a few lessons learned from the Web, but there is one thing that could be improved about the Web: latency. Whenever you have to wait for an application to respond or a website to render, you almost always wait for a network connection that isn’t as fast as you want it at that point. Waiting a few seconds instead of milliseconds greatly affects user experience and thus user satisfaction.
-<p>CouchDBはWebからいくつかの *教訓* を得ていますが、Webの残念なところがひとつだけあります。それはレイテンシです。あなたは、アプリケーションが反応してウェブサイトを再描画して、そこで待ちたくないけどネットワーク接続を待ってしまいます。ミリ秒のかわりに数秒待つのはユーザエクスペリエンスや顧客満足度に強く影響することでしょう。
+<p>CouchDBはWebからいくつかの教訓を得ていますが、Webの残念なところがひとつだけあります。それはレイテンシです。あなたは、アプリケーションが反応してウェブサイトを再描画して、そこで待ちたくないけどネットワーク接続を待ってしまいます。ミリ秒のかわりに数秒待つのはユーザエクスペリエンスや顧客満足度に強く影響することでしょう。
 
 <p>What do you do when you are offline? This happens all the time—your DSL or cable provider has issues, or your iPhone, G1, or Blackberry has no bars, and no connectivity means no way to get to your data.
-<p>さらに、オフライン時に何をしているか、です。これは常に起こりえます。あなたのDSLまたはケーブルテレビ回線のプロバイダが問題を持っていれば、あなたのiPhoneなどのケータイは *アンテナが立ってない* 状態の場合、自分のデータに一切アクセスできなくなってしまいます。
+<p>さらに、オフライン時に何をしているか、です。これは常に起こりえます。あなたのDSLまたはケーブルテレビ回線のプロバイダが問題を持っていれば、あなたのiPhoneなどのケータイはアンテナが立ってない状態の場合、自分のデータに一切アクセスできなくなってしまいます。
 
 <p>CouchDB can solve this scenario as well, and this is where scaling is important again. This time it is scaling down. Imagine CouchDB installed on phones and other mobile devices that can synchronize data with centrally hosted CouchDBs when they are on a network. The synchronization is not bound by user interface constraints like subsecond response times. It is easier to tune for high bandwidth and higher latency than for low bandwidth and very low latency. Mobile applications can then use the local CouchDB to fetch data, and since no remote networking is required for that, latency is low by default.
 <p>CouchDB はこのシナリオを防ぐことができます - そして、ここでもスケーリングが重要となってきます。今回はスケールダウンです。CouchDBが携帯電話などのモバイル機器にインストールされており、オンラインのときは中央サーバにあるCouchDBと同期できるのです。同期作業は、ユーザーインターフェイスのように一秒以内のレスポンスタイムが要求されることはありません。低帯域・低レイテンシの状況よりも、広帯域・高レイテンシの方がチューニングは容易です。ローカルのCouchDBを利用すれば、ネットワーク接続が不要で、ローカルなのでDBアクセスも低レイテンシで済むため、モバイルアプリケーションを構築するのはとても容易になります。

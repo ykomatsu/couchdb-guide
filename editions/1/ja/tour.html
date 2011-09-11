@@ -66,8 +66,10 @@ curl -X GET http://127.0.0.1:5984/_all_dbs
 <div class="aside note">
 
 <p>The <code>curl</code> command issues <code>GET</code> requests by default. You can issue <code>POST</code> requests using <code>curl -X POST</code>. To make it easy to work with our terminal history, we usually use the <code>-X</code> option even when issuing <code>GET</code> requests. If we want to send a <code>POST</code> next time, all we have to change is the method.
+<p><code>curl</code>コマンドはデフォルトで<code>GET</code>リクエストを発行します。<code>POST</code>リクエストを発行したい場合は、<code>curl -X POST</code>としてコマンドを実行します。ですが、コマンドの実行履歴から別の作業が行いやすいように、<code>GET</code>リクエストを発行するときも<code>-X</code>オプションをつけてコマンドを実行しています。<code>GET</code>リクエストを発行した後、<code>POST</code>リクエストを発行したいときは、コマンドの実行履歴の<code>GET</code>を<code>POST</code>に変えるだけですみますから。
 
 <p>HTTP does a bit more under the hood than you can see in the examples here. If you’re interested in every last detail that goes over the wire, pass in the <code>-v</code> option (e.g., <code>curl -vX GET</code>), which will show you the server <code>curl</code> tries to connect to, the request headers it sends, and response headers it receives back. Great for debugging!
+<p>HTTP通信は、ここで例として提示している裏側でいろいろなことを行っています。もし、HTTP通信が裏側でやってくれていることに興味があるのなら、<code>curl -vX GET</code>のように<code>-v</code>オプションをつけて<code>curl</code>でサーバーに接続してみてください。リクエストヘッダーやレスポンスヘッダーが表示されると思います。なんてすばらしいデバッグなんでしょう!
 
 </div>
 

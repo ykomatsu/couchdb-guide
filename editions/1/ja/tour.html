@@ -14,14 +14,14 @@
 <h2 id="tour">さあ、始めよう</h2>
 
 <p>In this chapter, we’ll take a quick tour of CouchDB’s features, familiarizing ourselves with <em>Futon</em>, the built-in administration interface. We’ll create our first document and experiment with CouchDB views. Before we start, skip to <a href="source.html">Appendix D, Installing from Source</a> and look for your operating system. You will need to follow those instructions and get CouchDB installed before you can progress.
-<p>本章では、CouchDBに内蔵されている管理用のインターフェースを使用して、「Futon」に慣れるこための簡単なツアーを行います。CouchDBに最初のドキュメントを登録して、ビュー機能を試してみます。話を進める前に、付録を参照して使用しているオペレーティングシステムに適した方法でCouchDBをインストールしておいてください。
+<p>本章では、CouchDBに内蔵されている管理用のインターフェースを使用して、<em>「Futon」</em>に慣れるための簡単なツアーを行います。CouchDBに最初のドキュメントを登録して、ビュー機能を試してみます。話を進める前に、<a href="source.html">付録</a>を参照して使用しているオペレーティングシステムに適した方法でCouchDBをインストールしておいてください。
 
 
 <h3 id="go">All Systems Are Go!</h3>
 <h3 id="go">すべて準備完了!</h3>
 
 <p>We’ll have a very quick look at CouchDB’s bare-bones <em>Application Programming Interface (API)</em> by using the command-line utility <code>curl</code>. Please note that this is only one way of talking to CouchDB. We will show you plenty more throughout the rest of the book. What’s interesting about <code>curl</code> is that it gives you control over raw HTTP requests, and you can see exactly what is going on “underneath the hood” of your database.
-<p>私たちは、コマンドライン・ユーティリティーのcurlを使用して、CouchDBで公開されているアプリケーション・プログラミング・インタフェース(API)を簡単に確認することが出来ます。注意して欲しいのは、ここで紹介する方法はCouchDBと通信する方法のほんの一例です。この本の残りの部分で、いろいろな通信方法をご紹介するつもりです。curlを使用すると、低レベルのHTTPリクエストを制御することができます。つまり、データベースとの通信内容の「胸の内」を確認することができるのです。
+<p>私たちは、コマンドライン・ユーティリティーの<code>curl</code>を使用して、CouchDBで公開されている<em>アプリケーション・プログラミング・インタフェース(API)</em>を簡単に確認することが出来ます。注意して欲しいのは、ここで紹介する方法はCouchDBと通信する方法のほんの一例です。この本の残りの部分で、いろいろな通信方法をご紹介するつもりです。<code>curl</code>を使用すると、低レベルのHTTPリクエストを制御することができます。つまり、データベースとの通信内容の「胸の内」を確認することができるのです。
 
 <p>Make sure CouchDB is still running, and then do:
 <p>CouchDBが正常に動作している状態で、こんなコマンドを実行します:
@@ -31,7 +31,7 @@ curl http://127.0.0.1:5984/
 </pre>
 
 <p>This issues a <code>GET</code> request to your newly installed CouchDB instance.
-<p>これは、新しくインストールしたCouchDBインスタンスへのGETリクエストです。
+<p>これは、新しくインストールしたCouchDBインスタンスへの<code>GET</code>リクエストです。
 
 <p>The reply should look something like:
 <p>CouchDBからの応答はこのようになるはずです:
@@ -41,7 +41,7 @@ curl http://127.0.0.1:5984/
 </pre>
 
 <p>Not all that spectacular. CouchDB is saying “hello” with the running version number.
-CouchDBから、挨拶と共に動作しているバージョンの応答があるだけで、そんなに大したことはありません。
+<p>CouchDBから、挨拶と共に動作しているバージョンの応答があるだけで、そんなに大したことはありません。
 
 <p>Next, we can get a list of databases:
 <p>次に、データベースの一覧を取得します:
@@ -51,7 +51,7 @@ curl -X GET http://127.0.0.1:5984/_all_dbs
 </pre>
 
 <p>All we added to the previous request is the <code>_all_dbs</code> string.
-<p>_all_dbsという文字列は、以前に追加したデータベースを取得する要求です。
+<p><code>_all_dbs</code>という文字列は、以前に追加したデータベースを取得する要求です。
 
 <p>The response should look like:
 <p>応答はこんな感じになるでしょう:
@@ -61,7 +61,7 @@ curl -X GET http://127.0.0.1:5984/_all_dbs
 </pre>
 
 <p>Oh, that’s right, we didn’t create any databases yet! All we see is an empty list.
-そうです、まだ何もデータベースを作っていないのですから!空のリストが表示されます。
+<p>そうです、まだ何もデータベースを作っていないのですから!空のリストが表示されます。
 
 <div class="aside note">
 
@@ -99,10 +99,10 @@ curl -X GET http://127.0.0.1:5984/_all_dbs
 <div class="aside note">
 
 <p>We should mention <em>JavaScript Object Notation (JSON)</em> here, the data format CouchDB speaks. JSON is a lightweight data interchange format based on JavaScript syntax. Because JSON is natively compatible with JavaScript, your web browser is an ideal client for CouchDB.
-<p>話を進める前に、CouchDBのデータ形式であるJavaScript Object Notation(JSON)について説明しておきます。JSONはJavaScriptの構文を基にした軽量なデータ交換形式です。JSONはJavaScriptと互換性があるので、WebブラウザーはCouchDBにとって理想的なクライアントとなります。
+<p>話を進める前に、CouchDBのデータ形式である<em>JavaScript Object Notation(JSON)</em>について説明しておきます。JSONはJavaScriptの構文を基にした軽量なデータ交換形式です。JSONはJavaScriptと互換性があるので、WebブラウザーはCouchDBにとって理想的なクライアントとなります。
 
 <p>Brackets (<code>[]</code>) represent ordered lists, and curly braces (<code>{}</code>) represent key/value dictionaries. Keys must be strings, delimited by quotes (<code>"</code>), and values can be strings, numbers, booleans, lists, or key/value dictionaries. For a more detailed description of JSON, see <a href="json.html">Appendix E, JSON Primer</a>.
-<p>括弧 ([]) は表示順序を表し、中括弧 ({}) はkey/valueの辞書を表します。キーは文字列で引用符 (") で区切り、値は文字列、数値、真偽値、リスト、又はkey/valueの辞書を保持することができます。JSONの詳細な説明については、付録のJSON Primerを参照してください。
+<p>括弧 (<code>[]</code>) は表示順序を表し、中括弧 (<code>{}</code>) はkey/valueの辞書を表します。キーは文字列で引用符 (<code>"</code>) で区切り、値は文字列、数値、真偽値、リスト、又はkey/valueの辞書を保持することができます。JSONの詳細な説明については、<a href="json.html">付録のJSON Primer</a>を参照してください。
 
 
 </div>
@@ -178,7 +178,7 @@ curl -X GET http://127.0.0.1:5984/_all_dbs
 </pre>
 
 <p>For brevity, we’ll skip working with documents, as the next section covers a different and potentially easier way of working with CouchDB that should provide experience with this. As we work through the example, keep in mind that “under the hood” everything is being done by the application exactly as you have been doing here manually. Everything is done using <code>GET</code>, <code>PUT</code>, <code>POST</code>, and <code>DELETE</code> with a URI.
-<p>簡潔さのために、ドキュメント操作の説明を省きました。次の章で、これまでと異るCouchDBの簡単な操作方法を紹介します。これからサンプルを紹介しますが、アプリケーションの見えない部分で、今まで手動で実行してきたことと同様の操作が行われていることを覚えておいてください。全ての操作は、GET, PUT, POSTそして、DELETEメソッドとURIを使用して実行することができます。
+<p>簡潔さのために、ドキュメント操作の説明を省きました。次の章で、これまでと異なるCouchDBの簡単な操作方法を紹介します。これからサンプルを紹介しますが、アプリケーションの見えない部分で、今まで手動で実行してきたことと同様の操作が行われていることを覚えておいてください。全ての操作は、<code>GET</code>, <code>PUT</code>, <code>POST</code>そして、<code>DELETE</code>メソッドとURIを使用して実行することができます。
 
 
 <h3 id="welcome">Welcome to Futon</h3>
@@ -195,7 +195,7 @@ http://127.0.0.1:5984/_utils/
 </pre>
 
 <p>If you’re running version 0.9 or later, you should see something similar to <a href="#figure/1">Figure 1, “The Futon welcome screen”</a>. In later chapters, we’ll focus on using CouchDB from server-side languages such as Ruby and Python. As such, this chapter is a great opportunity to showcase an example of natively serving up a dynamic web application using nothing more than CouchDB’s integrated web server, something you may wish to do with your own applications.
-<p>もし、CouchDBのバージョン0.9以降を実行しているなら、<a href="#figure/1">図1</a>のような画面が表示されると思います。これ以降の章では、RubyやPythonのようなサーバーサイドの言語からCouchDBを使用することに焦点を当てていきます。そのため、この章はCouchDBに内蔵されているWebサーバーのみを使用した、生粋のWebアプリケーションの例を紹介するする良い機会です。自分自身のアプリケーションを早く作ってみたいと思うでしょうが、お付き合いください。
+<p>もし、CouchDBのバージョン0.9以降を実行しているなら、<a href="#figure/1">図1</a>のような画面が表示されると思います。これ以降の章では、RubyやPythonのようなサーバーサイドの言語からCouchDBを使用することに焦点を当てていきます。そのため、この章はCouchDBに内蔵されているWebサーバーのみを使用した、生粋のWebアプリケーションの例を紹介する良い機会です。自分自身のアプリケーションを早く作ってみたいと思うでしょうが、お付き合いください。
 
 
 <p>The first thing we should do with a fresh installation of CouchDB is run the test suite to verify that everything is working properly. This assures us that any problems we may run into aren’t due to bothersome issues with our setup. By the same token, failures in the Futon test suite are a red flag, telling us to double-check our installation before attempting to use a potentially broken database server, saving us the confusion when nothing seems to be working quite like we expect!
@@ -206,14 +206,14 @@ http://127.0.0.1:5984/_utils/
 <img src="tour/01.png">
 
 <p class="caption">Figure 1. The Futon welcome screen
-<p class="caption">Figure 1. Futonへようこそ
+<p class="caption">図1 Futonへようこそ
 
 </div>
 
 <div class="aside warning">
 
 <p>Some common network configurations cause the replication test to fail when accessed via the <code>localhost</code> address. You can fix this by accessing CouchDB via <em>http://127.0.0.1:5984/_utils/</em>.
-<p>localhostアドレスでアクセスすると、レプリケーションのネットワーク設定テストがいくつか失敗してしまいます。CouchDBにhttp://127.0.0.1:5984/_utils/でアクセスすることで、この問題を回避することができます。
+<p><code>localhost</code>アドレスでアクセスすると、レプリケーションのネットワーク設定テストがいくつか失敗してしまいます。CouchDBに<em>http://127.0.0.1:5984/_utils/</em>でアクセスすることで、この問題を回避することができます。
 
 </div>
 
@@ -226,7 +226,7 @@ http://127.0.0.1:5984/_utils/
 <img src="tour/02.png">
 
 <p class="caption">Figure 2. The Futon test suite running some tests
-<p class="caption">Figure 2. Futonテストスイート実行中
+<p class="caption">図2 Futonテストスイート実行中
 
 </div>
 
@@ -248,11 +248,11 @@ http://127.0.0.1:5984/_utils/
 <h3 id="first">最初のデータベースとドキュメント</h3>
 
 <p>Creating a database in Futon is simple. From the overview page, click “Create Database.” When asked for a name, enter <code>hello-world</code> and click the Create button.
-<p>Futonからデータベースを簡単に作成できます。Overviewのページで、Create Databaseをクリックしてください。データベース名の入力を求められるので、hello-worldと入力し、Createボタンをクリックします。
+<p>Futonからデータベースを簡単に作成できます。Overviewのページで、Create Databaseをクリックしてください。データベース名の入力を求められるので、<code>hello-world</code>と入力し、Createボタンをクリックします。
 
 
 <p>After your database has been created, Futon will display a list of all its documents. This list will start out empty (<a href="#figure/3">Figure 3, “An empty database in Futon”</a>), so let’s create our first document. Click the “Create Document” link and then the Create button in the pop up. Make sure to leave the document ID blank, and CouchDB will generate a UUID for you.
-<p>Futonでデータベースを作成すると、図3-3のようにデータベースに保存されている全てのドキュメントの一覧が表示されます。データベース作成直後は何も登録されていませんので、ドキュメントを作成しましょう。Create Documentのリンクをクリックすると、Createボタンのあるポップアップが表示されます。ドキュメントIDを空白にすると、CouchDBが自動的にUUIDを付与します。
+<p>Futonでデータベースを作成すると、<a href="#figure/3">図3</a>のようにデータベースに保存されている全てのドキュメントの一覧が表示されます。データベース作成直後は何も登録されていませんので、ドキュメントを作成しましょう。Create Documentのリンクをクリックすると、Createボタンのあるポップアップが表示されます。ドキュメントIDを空白にすると、CouchDBが自動的にUUIDを付与します。
 
 
 <div class="aside warning">
@@ -263,10 +263,10 @@ http://127.0.0.1:5984/_utils/
 </div>
 
 <p>Futon will display the newly created document, with its <code>_id</code> and <code>_rev</code> as the only fields. To create a new field, click the “Add Field” button. We’ll call the new field <code>hello</code>. Click the green check icon (or hit the Enter key) to finalize creating the <code>hello</code> field. Double-click the <code>hello</code> field’s value (default <code>null</code>) to edit it.
-<p.作成したばかりのドキュメントは、_idと_revのフィールドだけFutonに表示されていると思います。Add Fieldボタンをクリックすると、新しいフィールドを作成できます。helloという新しいフィールドを作成しました。緑色のアイコンをクリックするかエンターキーを押すと、helloフィールド作成が完了します。helloフィールドのvalueをダブルクリックすると値の入力が行えます。
+<p>作成したばかりのドキュメントは、<code>_id</code>と<code>_rev</code>のフィールドだけFutonに表示されていると思います。Add Fieldボタンをクリックすると、新しいフィールドを作成できます。<code>hello</code>という新しいフィールドを作成しました。緑色のアイコンをクリックするかエンターキーを押すと、<code>hello</code>フィールド作成が完了します。<code>hello</code>フィールドのvalueをダブルクリックすると値の入力が行えます（初期値は<code>null</code>です）。
 
 <p>If you try to enter <code>world</code> as the new value, you’ll get an error when you click the value’s green check icon. CouchDB values must be entered as valid JSON. Instead, enter <code>"world"</code> (with quotes) because this is a valid JSON string. You should have no problems saving it. You can experiment with other JSON values; e.g., <code>[1, 2, "c"]</code> or <code>{"foo":"bar"}</code>. Once you’ve entered your values into the document, make a note of its <code>_rev</code> attribute and click “Save Document.” The result should look like <a href="#figure/4">Figure 4, “A “hello world” document in Futon”</a>.
-<p>helloの値にworldと入力しようとすると、エラーが表示されると思います。CouchDBの値は有効なJSON形式でなくてはいけません。"world"(引用符付き)と入力すると保存できます。引用符をつけることで、JSON形式で有効な文字列と認識されたからです。[1, 2, "c"] や{"foo":"bar"}等、JSON形式の値を試してみてください。ドキュメントに登録した値は、Save Documentをクリックすると_revに記録されます。結果は<a href="#figure/4">図4</a>のようになるはずです。
+<p>helloの値に<code>world</code>と入力しようとすると、エラーが表示されると思います。CouchDBの値は有効なJSON形式でなくてはいけません。<code>"world"</code>(引用符付き)と入力すると保存できます。引用符をつけることで、JSON形式で有効な文字列と認識されたからです。<code>[1, 2, "c"]</code>や<code>{"foo":"bar"}</code>等、JSON形式の値を試してみてください。ドキュメントに登録した値は、Save Documentをクリックすると<code>_rev</code>に記録されます。結果は<a href="#figure/4">図4</a>のようになるはずです。
 
 
 <div class="figure" id="figure/3">
@@ -274,7 +274,7 @@ http://127.0.0.1:5984/_utils/
 <img src="tour/03.png">
 
 <p class="caption">Figure 3. An empty database in Futon
-<p class="caption">Figure 3. Futonで見た空のデータベース
+<p class="caption">図3 Futonで見た空のデータベース
 
 </div>
 
@@ -283,22 +283,22 @@ http://127.0.0.1:5984/_utils/
 <img src="tour/04.png">
 
 <p class="caption">Figure 4. A “hello world” document in Futon
-<p class="caption">Figure 4. Futonで見た"hello world"ドキュメント
+<p class="caption">図4 Futonで見た"hello world"ドキュメント
 
 </div>
 
 <p>You’ll notice that the document’s <code>_rev</code> has changed. We’ll go into more detail about this in later chapters, but for now, the important thing to note is that <code>_rev</code> acts like a safety feature when saving a document. As long as you and CouchDB agree on the most recent <code>_rev</code> of a document, you can successfully save your changes.
-<p>_revの値が変更されたことがわかると思います。後の章で詳しく説明しますが、この時点で重要なことは_revがドキュメントを保存するとき安全機構のように動作するという点です。CouchDBが提示する最新のドキュメントの_revに従えば、正常にドキュメントの変更を保存することができます。
+<p><code>_rev</code>の値が変更されたことがわかると思います。後の章で詳しく説明しますが、この時点で重要なことは<code>_rev</code>がドキュメントを保存するとき安全機構のように動作するという点です。CouchDBが提示する最新のドキュメントの<code>_rev</code>に従えば、正常にドキュメントの変更を保存することができます。
 
 <p>Futon also provides a way to display the underlying JSON data, which can be more compact and easier to read, depending on what sort of data you are dealing with. To see the JSON version of our “hello world” document, click the Source tab. The result should look like <a href="#figure/5">Figure 5, “The JSON source of a “hello world” document in Futon”</a>.
-<p.また、Futonはよりコンパクトでデータのソートや判読が簡単な、元のJSON形式のデータを表示する方法も提供しています。SourceタブをクリックするとHello WorldドキュメントがJSON形式で表示されます。表示される結果は図3-5のようになります。
+<p>また、Futonはよりコンパクトでデータのソートや判読が簡単な、元のJSON形式のデータを表示する方法も提供しています。SourceタブをクリックするとHello WorldドキュメントがJSON形式で表示されます。表示される結果は<a href="#figure/5">図5</a>のようになります。
 
 <div class="figure" id="figure/5">
 
 <img src="tour/05.png">
 
 <p class="caption">Figure 5. The JSON source of a “hello world” document in Futon
-<p class="caption">Figure 5. Futonで表示した"hello world"ドキュメントのJSONソース
+<p class="caption">図5 Futonで表示した"hello world"ドキュメントのJSONソース
 
 </div>
 
@@ -306,7 +306,7 @@ http://127.0.0.1:5984/_utils/
 <h3 id="mapreduce">MapReduceを使用したクエリーの実行</h3>
 
 <p>Traditional relational databases allow you to run any queries you like as long as your data is structured correctly. In contrast, CouchDB uses predefined <em>map</em> and <em>reduce</em> functions in a style known as MapReduce. These functions provide great flexibility because they can adapt to variations in document structure, and indexes for each document can be computed independently and in parallel. The combination of a map and a reduce function is called a <em>view</em> in CouchDB terminology.
-<p>従来のリレーショナルデータベースは、データが正しく構造化されていれば、どのようなクエリーでも実行することができます。しかし、CouchDBはMapReduce方式として知られている、事前に定義したmapとreduce関数を用いた方式を使用します。この方式はとても柔軟な対応が行えます。なぜならドキュメントの構造の変化に順応でき、処理を独立させて並行して処理を実行することが可能だらです。mapとreduce関数の組み合わせをCouchDBの用語でviewと表現します。
+<p>従来のリレーショナルデータベースは、データが正しく構造化されていれば、どのようなクエリーでも実行することができます。しかし、CouchDBはMapReduce方式として知られている、事前に定義した<em>map</em>と<em>reduce</em>関数を用いた方式を使用します。この方式はとても柔軟な対応が行えます。なぜならドキュメントの構造の変化に順応でき、処理を独立させて並行して処理を実行することが可能だからです。mapとreduce関数の組み合わせをCouchDBの用語で<em>view</em>と表現します。
 
 
 <div class="aside note">
@@ -317,13 +317,13 @@ http://127.0.0.1:5984/_utils/
 </div>
 
 <p>Map functions are called once with each document as the argument. The function can choose to skip the document altogether or <em>emit</em> one or more view rows as key/value pairs. Map functions may not depend on any information outside of the document. This independence is what allows CouchDB views to be generated incrementally and in parallel.
-<p>map関数は、ドキュメント毎にそのドキュメントを引数として一回だけ呼び出されます。関数でドキュメントを完全に読み飛ばすか、出力するか、またはkey/valueのペアを列として表示するかを選ぶことができます。map関数はドキュメント以外の情報に依存しません。この独立性により、CouchDBのviewは同時実行数を増やすことを可能にしています。
+<p>map関数は、ドキュメント毎にそのドキュメントを引数として一回だけ呼び出されます。関数でドキュメントを完全に読み飛ばすか、<em>出力する</em>か、またはkey/valueのペアを列として表示するかを選ぶことができます。map関数はドキュメント以外の情報に依存しません。この独立性により、CouchDBのviewは同時実行数を増やすことを可能にしています。
 
 <p>CouchDB views are stored as rows that are kept sorted by key. This makes retrieving data from a range of keys efficient even when there are thousands or millions of rows. When writing CouchDB map functions, your primary goal is to build an index that stores related data under nearby keys.
 <p>CouchDBのviewは、キーによりソートされ行として保存されています。こうすることで、キーの影響範囲が数千または数百万行に及ぶ場合でも、データを取得できるようになります。CouchDBのmap関数を作成するにあたり、まず最初に試してみることは、保存しているデータのキーに関連したインデックスを作成することです。
 
 <p>Before we can run an example MapReduce view, we’ll need some data to run it on. We’ll create documents carrying the price of various supermarket items as found at different stores. Let’s create documents for apples, oranges, and bananas. (Allow CouchDB to generate the <code>_id</code> and <code>_rev</code> fields.) Use Futon to create documents that have a final JSON structure that looks like this:
-<p.MapReduceのviewを試してみる前に、データを登録しておく必要があります。異なるスーパーマーケットで見つけた、様々な品物の情報をを掲載するドキュメントを作成します。りんご、オレンジ、そしてバナナに関するドキュメントを作成してみましょう(_idと_revはCouchDBに自動生成させます)。Futonを使用してドキュメントを作成します。最終的なJSONの構造はこうなります:
+<p>MapReduceのviewを試してみる前に、データを登録しておく必要があります。異なるスーパーマーケットで見つけた、様々な品物の情報をを掲載するドキュメントを作成します。りんご、オレンジ、そしてバナナに関するドキュメントを作成してみましょう(<code>_id</code>と<code>_rev</code>はCouchDBに自動生成させます)。Futonを使用してドキュメントを作成します。最終的なJSONの構造はこうなります:
 
 <pre>
 {
@@ -346,7 +346,7 @@ http://127.0.0.1:5984/_utils/
 <img src="tour/06.png">
 
 <p class="caption">Figure 6. An example document with apple prices in Futon
-<p class="caption">Figure 6. Futon上でのりんごの価格ドキュメントの例
+<p class="caption">図6 Futon上でのりんごの価格ドキュメントの例
 
 </div>
 
@@ -391,7 +391,7 @@ http://127.0.0.1:5984/_utils/
 <img src="tour/07.png">
 
 <p class="caption">Figure 7. A temporary view in Futon
-<p class="caption">Figure 7. Futonで見たtemporary view
+<p class="caption">図7 Futonで見たtemporary view
 
 </div>
 
@@ -412,10 +412,10 @@ function(doc) {
 </pre>
 
 <p>This is a <em>JavaScript</em> function that CouchDB runs for each of our documents as it computes the view. We’ll leave the reduce function blank for the time being.
-<p>CouchDBはドキュメント毎に、viewであるこのJavaScript関数の処理を実行します。reduce関数はしばらくの間空白のままとしておきます。
+<p>CouchDBはドキュメント毎に、viewであるこの<em>JavaScript</em>関数の処理を実行します。reduce関数はしばらくの間空白のままとしておきます。
 
 <p>Click “Run” and you should see result rows like in <a href="#figure/8">Figure 8, “The results of running a view in Futon”</a>, with the various items sorted by price. This map function could be even more useful if it grouped the items by type so that all the prices for bananas were next to each other in the result set. CouchDB’s key sorting system allows any valid JSON object as a key. In this case, we’ll emit an array of <code>[item, price]</code> so that CouchDB groups by item type and price.
-<p>Runをクリックすると、価格でソートされた様々なアイテムの情報が、図3-8のように表示されると思います。項目のタイプ別にまとまっていれば、このmap関数はもっと役立つかも知れません。それなので、全ての結果に品名と価格を表示するよう変更してみます。CouchDBは、キーの並び替えにどんなJSONオブジェクトでも指定することが可能です。詳細は、225ページのView Collation tableを参照してください。この例では、[item, price]の配列をキーに指定することで、CouchDBは品名と価格でグループ化してくれます。
+<p>Runをクリックすると、価格でソートされた様々なアイテムの情報が、図3-8のように表示されると思います。項目のタイプ別にまとまっていれば、このmap関数はもっと役立つかも知れません。それなので、全ての結果に品名と価格を表示するよう変更してみます。CouchDBは、キーの並び替えにどんなJSONオブジェクトでも指定することが可能です。この例では、<code>[item, price]</code>の配列をキーに指定することで、CouchDBは品名と価格でグループ化してくれます。
 
 
 <div class="figure" id="figure/8">
@@ -423,7 +423,7 @@ function(doc) {
 <img src="tour/08.png">
 
 <p class="caption">Figure 8. The results of running a view in Futon
-<p class="caption">Figure 8. Futonでのviewの処理結果の表示
+<p class="caption">図8 Futonでのviewの処理結果の表示
 
 </div>
 
@@ -444,7 +444,7 @@ function(doc) {
 </pre>
 
 <p>Here, we first check that the document has the fields we want to use. CouchDB recovers gracefully from a few isolated map function failures, but when a map function fails regularly (due to a missing required field or other JavaScript exception), CouchDB shuts off its indexing to prevent any further resource usage. For this reason, it’s important to check for the existence of any fields before you use them. In this case, our map function will skip the first “hello world” document we created without emitting any rows or encountering any errors. The result of this query should look like <a href="#figure/9">Figure 9, “The results of running a view after grouping by item type and price”</a>.
-<p>この関数は、まずドキュメントに処理に使用するフィールドが存在するかチェックを行っています。CouchDBは独立したmap関数でエラーが発生した場合でも、正常に復帰します。map関数が定期的に失敗する場合(必須のフィールドの不足や、その他のJavaScriptの例外)、CouchDBは無駄なリソースの消費を避けるため、そのmap関数を切り離します。そのため、ちゃんと関数内で使用するフィールドの存在を確認することはとても重要です。この例では、作成したmap関数は最初に登録した"hello world"ドキュメントをスキップし、エラーの発生を回避しています。このmap関数の実行結果は図3-9のようになります。
+<p>この関数は、まずドキュメントに処理に使用するフィールドが存在するかチェックを行っています。CouchDBは独立したmap関数でエラーが発生した場合でも、正常に復帰します。map関数が定期的に失敗する場合(必須のフィールドの不足や、その他のJavaScriptの例外)、CouchDBは無駄なリソースの消費を避けるため、そのmap関数を切り離します。そのため、ちゃんと関数内で使用するフィールドの存在を確認することはとても重要です。この例では、作成したmap関数は最初に登録した"hello world"ドキュメントをスキップし、エラーの発生を回避しています。このmap関数の実行結果は<a href="#figure/9">図9</a>のようになります。
 
 
 <div class="figure" id="figure/9">
@@ -452,7 +452,7 @@ function(doc) {
 <img src="tour/09.png">
 
 <p class="caption">Figure 9. The results of running a view after grouping by item type and price
-<p class="caption">Figure 9. 項目と価格でまとめる処理に変更した後の実行結果
+<p class="caption">図9 項目と価格でまとめる処理に変更した後の実行結果
 
 </div>
 
@@ -476,7 +476,7 @@ function(doc) {
 <p>Futonは二つのローカルデータベース間、ローカルとリモートのデータベース間、そしてリモートとリモートのデータベース間のレプリケーションを実行することが可能です。データベースのバックアップを作成する簡単な例として、ひとつのローカルデータベースを別なローカルデータベースに複製してみます。
 
 <p>First we’ll need to create an empty database to be the target of replication. Return to the overview and create a database called <code>hello-replication</code>. Now click “Replicator” in the sidebar and choose <code>hello-world</code> as the source and <code>hello-replication</code> as the target. Click “Replicate” to replicate your database. The result should look something like <a href="#figure/10">Figure 10, “Running database replication in Futon”</a>.
-<p>最初に、レプリケーションの対象となる空のデータベースを作成する必要があります。Overviewに戻り、hello-replicationという名前のデータベースを作成します。サイドバーにあるReplicatorをクリックし、複製元にhello-world、複製先にhello-replicationを選択します。Replicateをクリックすると、データベースのレプリケーションが実行されます。結果は図3-10のようになります。
+<p>最初に、レプリケーションの対象となる空のデータベースを作成する必要があります。Overviewに戻り、<code>hello-replication</code>という名前のデータベースを作成します。サイドバーにあるReplicatorをクリックし、複製元に<code>hello-world</code>、複製先に<code>hello-replication</code>を選択します。Replicateをクリックすると、データベースのレプリケーションが実行されます。結果は<a href="#figure/10">図10</a>のようになります。
 
 
 <div class="figure" id="figure/10">
@@ -484,14 +484,14 @@ function(doc) {
 <img src="tour/10.png">
 
 <p class="caption">Figure 10. Running database replication in Futon
-<p class="caption">Futonからデータベースのレプリケーションを実行
+<p class="caption">図10 Futonからデータベースのレプリケーションを実行
 
 </div>
 
 <div class="aside warning">
 
 <p>For larger databases, replication can take much longer. It is important to leave the browser window open while replication is taking place. As an alternative, you can trigger replication via <code>curl</code> or some other HTTP client that can handle long-running connections. If your client closes the connection before replication finishes, you’ll have to retrigger it. Luckily, CouchDB’s replication can take over from where it left off instead of starting from scratch.
-<p>大きなデータベースでは、レプリケーションに時間がかかります。注意点として、レプリケーションが実行されているときにブラウザを閉じないでください。これを避ける方法として、curlや長時間コネクションを保持することができるHTTPクライアントを使用して、レプリケーションを実行することができます。もし、レプリケーションが終了する前にコネクションを切断してしまった場合は、再度レプリケーションを実行してください。幸いにも、CouchDBのレプリケーションは中断した箇所から再開されます。
+<p>大きなデータベースでは、レプリケーションに時間がかかります。注意点として、レプリケーションが実行されているときにブラウザを閉じないでください。これを避ける方法として、<code>curl</code>や長時間コネクションを保持することができるHTTPクライアントを使用して、レプリケーションを実行することができます。もし、レプリケーションが終了する前にコネクションを切断してしまった場合は、再度レプリケーションを実行してください。幸いにも、CouchDBのレプリケーションは中断した箇所から再開されます。
 
 </div>
 
@@ -499,7 +499,7 @@ function(doc) {
 <h3 id="wrap">まとめ</h3>
 
 <p>Now that you’ve seen most of Futon’s features, you’ll be prepared to dive in and inspect your data as we build our example application in the next few chapters. Futon’s pure JavaScript approach to managing CouchDB shows how it’s possible to build a fully featured web application using only CouchDB’s HTTP API and integrated web server.
-<p>Futon重要な機能は確認できました。この章で学んだことを用いて、次章から紹介するサンプルアプリケーションを作成する時、データの構造を確認することができると思います。FutonのJavaScriptだけを使用してCouchDBを管理する試みは、CouchDBのHTTP APIと内蔵のWebサーバーのみでアプリケーションの開発が可能であることを示す良い例だと思います。
+<p>Futonの重要な機能は確認できました。この章で学んだことを用いて、次章から紹介するサンプルアプリケーションを作成する時、データの構造を確認することができると思います。FutonのJavaScriptだけを使用してCouchDBを管理する試みは、CouchDBのHTTP APIと内蔵のWebサーバーのみでアプリケーションの開発が可能であることを示す良い例だと思います。
 
 <p>But before we get there, we’ll have another look at CouchDB’s HTTP API—now with a magnifying glass. Let’s <em>curl</em> on the couch and relax.
-<p>しかし、その事例を示す前に、CouchDBのHTTP APIを詳細に確認したいと思います。ソファーの上に寝そべり、リラックスしていきましょう。
+<p>しかし、その事例を示す前に、CouchDBのHTTP APIを詳細に確認したいと思います。ソファーの上に<em>寝そべり</em>、リラックスしていきましょう。
